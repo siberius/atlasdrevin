@@ -1,0 +1,254 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE> Makroskopie </TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Language" content="cs">
+<link rel="stylesheet" type="text/css" href="../../css/style.css">
+<META NAME="Author" CONTENT="">
+<META NAME="Keywords" CONTENT="">
+<META NAME="Description" CONTENT="">
+<script language="JavaScript">
+<!--
+function okno(jmeno_obrazku) //otevre obrazek v samostatnem okne
+				 										 					//meritko = 1 ... zobrazi meritko
+{
+  u_okno1=window.open("okno.html?obrazek="+jmeno_obrazku,"okno1",
+  "top=5, left=0, width=700, height=600, menubar=no, directories=no,toolbar=no, location=no, status=no, scrollbars=yes, resizable=yes");
+ }
+
+var drevina = "";
+var search = "";
+var nazev="";
+var nazev_lat="";
+var nazev_lat1="";
+var nazev_lat_podle1="";
+var nazev_lat2="";
+var nazev_lat_podle2="";
+var skupina="";
+var barva="";
+var trvanlivost="";
+var oprac="";
+var vyuziti="";
+var hustota_0="";
+var hustota_12="";
+var tvrdost_J="";
+var tvrdost_B="";
+var obr1="";
+var obr2="";
+var obr3="";
+var obr1v="";
+var obr2v="";
+var obr3v="";
+var jadro="";
+var jadro_obr="";
+var jadro1="";
+var jadro1_obr="";
+var kanalky="";
+var kanalky_obr="";
+var ostrost="";
+var ostrost_obr="";
+var sirka_b="";
+var dren_pap="";
+var char_seskup_cev="";
+
+
+if (location.search.length > 0) {
+	x = location.search.substring(1);
+	var pairs = x.split("&");
+	var varnam = "";
+	var varval = "";
+	var pos=0;
+
+	for(var i = 0; i < pairs.length; i++) {
+		pos = pairs[i].indexOf('=');
+		if (pos == -1) continue;
+		varnam = pairs[i].substring(0,pos); varval = pairs[i].substring(pos+1);
+		if (varnam=="drevina" && varval) {drevina=varval;}
+
+		varnam = pairs[i].substring(0,pos); varval = pairs[i].substring(pos+1);
+		if (varnam=="search" && varval) {search=varval};
+	    }
+	}
+
+if (drevina) {
+	filename="" + drevina + ".js";
+	document.write('<script src="data/' + filename + '"><\/script>');
+	}
+//-->
+</script>
+
+</HEAD>
+
+<BODY>
+<div align=center>
+Jehličnany
+<select name="nav" onChange="if (options[selectedIndex].value != '') window.location.href='index.html?drevina='+options[selectedIndex].value" class="pulldown">
+<option value="">dřevo</option>
+<option value="bo">borovice</option>
+<option value="dg">douglaska</option>
+<option value="ja">jalovec</option>
+<option value="jd">jedle</option>
+<option value="md">modřín</option>
+<option value="sm">smrk</option>
+<option value="ti">tis</option>
+<option value="vj">vejmutovka</option>
+</select>
+Listnáče:
+<select name="nav" onChange="if (options[selectedIndex].value != '') window.location.href='index.html?drevina='+options[selectedIndex].value" class="pulldown">
+<option value="">dřevo</option>
+<option value="ak">akát</option>
+<option value="bk">buk</option>
+<option value="br">bříza</option>
+<option value="db">dub</option>
+<option value="hb">habr</option>
+<option value="hr">hrušeň</option>
+<option value="jb">jabloň</option>
+<option value="jm">jilm</option>
+<option value="jr">jeřáb</option>
+<option value="js">jasan</option>
+<option value="jv">javor</option>
+<option value="ji">jírovec</option>
+<option value="ka">kaštanovník</option>
+<option value="lp">lípa</option>
+<option value="mo">morušovník</option>
+<option value="ol">olše</option>
+<option value="or">ořešák</option>
+<option value="os">osika</option>
+<option value="pj">pajasan</option>
+<option value="pt">platan</option>
+<option value="sv">švestka</option>
+<option value="tp">topol</option>
+<option value="tr">třešeň</option>
+<option value="vr">vrba</option>
+</select></div>
+<br>
+<table cellspacing=0 cellpadding=3 border=0 align=center width=80%>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+if (drevina && i) {
+	document.write('<div align=center><a href="../mikro/index.html?drevina='+drevina+'"> Mikro pro tuto dřevinu</a></div>');
+	if (nazev>""){
+		document.write('<tr><td class=nazev width=170>Název dřeviny:</td><td class=hodnota>'+nazev+'</td></tr>\n');
+	}
+	if (nazev_lat2>""){nazev_lat2=", "+nazev_lat2};
+	if (nazev_lat1>""){
+		document.write('<tr><td class=nazev width=150>Vědecký název:</td><td><span class=hodnota_kurz>'+nazev_lat1+' '+'</span><span class=hodnota_lat_podle>'+nazev_lat_podle1+'</span><span class=hodnota_kurz>'+nazev_lat2+' '+'</span><span class=hodnota_lat_podle>'+nazev_lat_podle2+'</span></td></tr>\n');
+	}
+	if (obr1>"" || obr2>"" || obr3>""){
+		document.write('<tr><td colspan=2><hr size=1 noshade></td></tr>');
+		document.write('<tr><td colspan=2 align=center bgcolor=#FFFFFF>');
+	}
+	if (obr1>""){
+		document.write('<a href="javascript: okno(\''+obr1v+'\');"><IMG SRC="obr/'+obr1+'" BORDER="0" class=image></a>\n');
+	}
+	if (obr2>""){
+		document.write('<a href="javascript: okno(\''+obr2v+'\');"><IMG SRC="obr/'+obr2+'" BORDER="0" class=image></a>\n');
+	}
+	if (obr3>""){
+		document.write('<a href="javascript: okno(\''+obr3v+'\');"><IMG SRC="obr/'+obr3+'" BORDER="0" class=image></a>\n');
+	}
+	if (obr1>"" || obr2>"" || obr3>""){
+		document.write('</td></tr>');
+	}
+	document.write('<tr><td colspan=2><hr size=1 noshade></td></tr>');
+	document.write('<tr><td colspan=2><table border=0 cellspacing=0 cellpadding=0 width=100%><tr>');
+		if (jadro>"" || jadro1>""){
+			document.write('<td class=nazev align=center>jádro/běl</td>\n');
+		}
+		if (kanalky>""){
+			document.write('<td class=nazev align=center>pryskyřičné kanálky</td>\n');
+		}
+		if (ostrost=="ano"){
+			document.write('<td class=nazev align=center>ostrost přechodu j.d -> l.d.</td>\n');
+		}
+		if (dren_pap>""){
+			document.write('<td class=nazev align=center>Dřeňové paprsky (viditelnost)</td>\n');
+		}
+		if (char_seskup_cev>""){
+		document.write('<td class=nazev align=center>charakteristické seskupení letních cév</td>\n');
+		}
+		document.write('</tr><tr>');
+		//konec radku
+		if (jadro>"" || jadro1>""){
+			document.write('<td class=popis align=center valign=center><IMG SRC="../../image/'+jadro_obr+'" BORDER="0" ALT="">'+jadro);
+			if (jadro1>""){
+				document.write('<IMG SRC="../../image/'+jadro1_obr+'" BORDER="0" ALT="">'+jadro1);
+			}
+			document.write('</td>\n');
+		}
+		if (kanalky>""){
+			document.write('<td class=popis align=center valign=center><IMG SRC="../../image/'+kanalky_obr+'" WIDTH="26" HEIGHT="25" BORDER="0" ALT="">'+kanalky+'</td>\n');
+		}
+		if (ostrost=="ano"){
+			document.write('<td class=popis align=center valign=center><IMG SRC="obr/'+ostrost_obr+'" BORDER="0" WIDTH="300" ALT=""></td>\n');
+		}
+		if (dren_pap>""){
+			document.write('<td class=popis align=center valign=center>'+dren_pap+'</td>\n');
+		}
+		if (char_seskup_cev>""){
+		document.write('<td class=popis align=center valign=center>'+char_seskup_cev+'</td>\n');
+		}
+	document.write('</tr></table><br></td></tr>');
+
+	if (skupina>""){
+	document.write('<tr><td class=nazev width=150>Skupina:</td><td class=tooltip>'+skupina+'\n');
+	switch(skupina) {
+        case "J":
+            document.write('<span class="tooltiptext tooltip-right">Dřevo jehličnatých <BR>dřevin</span></td></tr>\n');
+        break;
+        case "LKP":
+            document.write('<span class="tooltiptext tooltip-right">Listnaté dřeviny s kruhovitě pórovitou stavbou dřeva</span></td></tr>\n');
+        break;
+        case "LRP":
+            document.write('<span class="tooltiptext tooltip-right">Listnaté dřeviny s roztroušeně pórovitou stavbou dřeva</span></td></tr>\n');
+        break;
+        case "LPKP":
+            document.write('<span class="tooltiptext tooltip-right">Listnaté dřeviny s polokruhovitě pórovitou stavbou dřeva</span></td></tr>\n');
+        break;
+        case "LPKP/LRP":
+            document.write('<span class="tooltiptext tooltip-right">Přechod mezi listnatými dřevinami s polokruhovitě a rotroušeně pórovitou stavbou dřeva</span></td></tr>\n');
+        default:
+            document.write('</td></tr>\n');} 
+    } 
+	
+	
+	
+	document.write('<tr><td class=nazev width=150 valign=top><br></td><td class=vyuziti></td></tr>\n');
+	if (sirka_b>""){
+		document.write('<tr><td class=nazev width=150>Šířka běli:</td><td class=popis>'+sirka_b+'</td></tr>\n');
+	}
+	
+	if (barva>""){
+		document.write('<tr><td class=nazev width=150>Barva dřeva:</td><td class=popis>'+barva+'</td></tr>\n');
+	}
+	if (trvanlivost>""){
+		document.write('<tr><td class=nazev width=150>Trvanlivost:</td><td class=popis>'+trvanlivost+'</td></tr>\n');
+	}
+	if (oprac>""){
+		document.write('<tr><td class=nazev width=150>Opracovatelnost:</td><td class=popis>'+oprac+'</td></tr>\n');
+	}
+	document.write('<tr><td class=nazev width=150 valign=top><br></td><td class=vyuziti></td></tr>\n');
+	if (vyuziti>""){
+		document.write('<tr><td class=nazev width=150 valign=top>Využití:</td><td class=vyuziti>'+vyuziti+'</td></tr>\n');
+	}
+	document.write('<tr><td class=nazev width=150 valign=top><br></td><td class=vyuziti></td></tr>\n');
+	if (hustota_0>""){
+		document.write('<tr><td class=nazev width=150>Hustota &rho;<sub>0</sub>:</td><td class=popis>'+hustota_0+' [kg&sdot;m<sup>&minus;3</sup>]</td></tr>\n');
+	}
+	document.write('<tr><td class=nazev width=150 valign=top></td><td class=vyuziti></td></tr>\n');
+	if (hustota_12>""){
+		document.write('<tr><td class=nazev width=150>Hustota &rho;<sub>12</sub>:</td><td class=popis>'+hustota_12+' [kg&sdot;m<sup>&minus;3</sup>]</td></tr>\n');
+	}
+	if (tvrdost_J>""){
+		document.write('<tr><td class=nazev width=150>Tvrdost H<sub>J ||</sub>:</td><td class=popis>'+tvrdost_J+' [MPa]</td></tr>\n');
+	}
+		if (tvrdost_B>""){
+		document.write('<tr><td class=nazev width=150>Tvrdost H<sub>B ||</sub>:</td><td class=popis>'+tvrdost_B+' [MPa]</td></tr>\n');
+	}
+}
+//-->
+</SCRIPT>
+</table>
+</BODY>
+</HTML>

@@ -1,0 +1,6 @@
+{
+  "name": "Klíč k určování dřevin",
+  "description": "Interaktivní výukový klíč pro makroskopické určování dřevin podle stavby dřeva a anatomických řezů P, R, T.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
