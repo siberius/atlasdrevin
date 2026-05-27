@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Award, BookOpen, Check, Play, HelpCircle, AlertCircle, RefreshCcw, Sparkles, Heart, ChevronLeft, ChevronRight, ExternalLink, X, Eye, Info } from 'lucide-react';
 import { ALL_SPECIES, DETECTIVE_CASES } from '../data/woodData';
-import { TreeSpecies, DetectiveCase } from '../types';
+import { TreeSpecies, DetectiveCase, getProxiedImageUrl } from '../types';
 import { WoodCutVisualizer } from './WoodCutVisualizer';
 
 interface QuizModeProps {
@@ -391,7 +391,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({
     setMendelShowSolution(true);
 
     // Reward XP based on score
-    onEarnXp(score * 10, 'mendelu_test', score >= 5);
+    onEarnXp(score * 10, 'mendelu_test', score >= 5, activeSubMode);
   };
 
   // Initialize a random Quick Quiz question
@@ -403,16 +403,15 @@ export const QuizMode: React.FC<QuizModeProps> = ({
     // Pick a diagnostic property of the species dynamically
     const propsList = [
       { key: 'latinName', label: 'Jaký je latinský název pro tuto dřevinu?', value: target.latinName },
-      { key: 'class', label: 'Jaká je taxonomická skupina této dřeviny?', value: target.class === 'jehlicnate' ? 'Jehličnaté' : 'Listnaté' },
-      { key: 'hardness', label: 'Jaká je typická tvrdost tohoto dřeva?', value: target.hardness },
-      { key: 'weight', label: 'Jaká je typická hmotnost tohoto dřeva?', value: target.weight }
+      { key: 'pDesc', label: `Která dřevina má tento popis příčného řezu:\n"${target.pDesc}"?`, value: target.name },
+      { key: 'ringsDesc', label: `Která dřevina má tento popis letokruhů:\n"${target.ringsDesc}"?`, value: target.name }
     ];
 
     if (target.specialFeatures && target.specialFeatures.length > 0) {
       propsList.push({
         key: 'feature',
-        label: 'Pro kterou dřevinu platí tato typická diagnostická vlastnost?',
-        value: target.specialFeatures[Math.floor(Math.random() * target.specialFeatures.length)]
+        label: `Pro kterou dřevinu platí tato typická diagnostická vlastnost:\n"${target.specialFeatures[Math.floor(Math.random() * target.specialFeatures.length)]}"?`,
+        value: target.name
       });
     }
 
@@ -420,33 +419,39 @@ export const QuizMode: React.FC<QuizModeProps> = ({
 
     // Generate incorrect buffer options
     const incorrectOptions: string[] = [];
-    while (incorrectOptions.length < 3) {
+    let attempts = 0;
+    while (incorrectOptions.length < 3 && attempts < 150) {
+      attempts++;
       const rIdx = Math.floor(Math.random() * ALL_SPECIES.length);
       const rSpec = ALL_SPECIES[rIdx];
       
-      let candidate = '';
-      if (pickedProp.key === 'feature') {
-        // If query is about characteristic we show tree names as options
-        candidate = rSpec.name;
-      } else {
-        candidate = pickedProp.key === 'latinName' ? rSpec.latinName : (pickedProp.key === 'class' ? (rSpec.class === 'jehlicnate' ? 'Jehličnaté' : 'Listnaté') : (pickedProp.key === 'hardness' ? rSpec.hardness : rSpec.weight));
-      }
+      const candidate = pickedProp.key === 'latinName' ? rSpec.latinName : rSpec.name;
+      const correctValue = pickedProp.key === 'latinName' ? target.latinName : target.name;
 
-      const correctValue = pickedProp.key === 'feature' ? target.name : pickedProp.value;
       if (candidate !== correctValue && !incorrectOptions.includes(candidate)) {
         incorrectOptions.push(candidate);
       }
     }
 
+    // Safety fallback backfill (will never realistically be hit with 33+ species, but ensures 100% no crash)
+    while (incorrectOptions.length < 3) {
+      const fallbackValue = pickedProp.key === 'latinName'
+        ? `Lignum ${incorrectOptions.length + 1}`
+        : `Dřevo ${incorrectOptions.length + 1}`;
+      if (!incorrectOptions.includes(fallbackValue)) {
+        incorrectOptions.push(fallbackValue);
+      }
+    }
+
     // Merge correct and incorrect options
-    const correctValue = pickedProp.key === 'feature' ? target.name : pickedProp.value;
+    const correctValue = pickedProp.key === 'latinName' ? target.latinName : target.name;
     const finalOptions = [...incorrectOptions];
     const correctIdx = Math.floor(Math.random() * 4);
     finalOptions.splice(correctIdx, 0, correctValue);
 
     setQuickQuestion({
       species: target,
-      property: pickedProp.key === 'feature' ? pickedProp.value : target.name,
+      property: pickedProp.key === 'latinName' ? target.name : target.latinName,
       propertyLabel: pickedProp.label,
       options: finalOptions,
       correctIndex: correctIdx
@@ -496,10 +501,10 @@ export const QuizMode: React.FC<QuizModeProps> = ({
   return (
     <div className="space-y-6">
       {/* Quiz tab selector */}
-      <div className="flex flex-wrap border-b border-stone-200">
+      <div className="flex flex-nowrap overflow-x-auto border-b border-stone-200 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none whitespace-nowrap">
         <button
           onClick={() => { onPlayClickSound(); setActiveSubMode('detective'); setSelectedCase(null); }}
-          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer ${
+          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeSubMode === 'detective'
               ? 'border-emerald-600 text-emerald-800 font-extrabold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
@@ -509,7 +514,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({
         </button>
         <button
           onClick={() => { onPlayClickSound(); setActiveSubMode('quick'); generateQuickQuestion(); }}
-          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer ${
+          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeSubMode === 'quick'
               ? 'border-emerald-600 text-emerald-800 font-extrabold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
@@ -519,23 +524,23 @@ export const QuizMode: React.FC<QuizModeProps> = ({
         </button>
         <button
           onClick={() => { setActiveSubMode('mendelu_makro'); startMendeluTest('makro'); }}
-          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer ${
+          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeSubMode === 'mendelu_makro'
               ? 'border-emerald-600 text-emerald-800 font-extrabold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
-          🪵 MENDELU Makro Test 1
+          🪵 Makro Test 1
         </button>
         <button
           onClick={() => { setActiveSubMode('mendelu_mikro'); startMendeluTest('mikro'); }}
-          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer ${
+          className={`pb-3 text-xs sm:text-sm font-semibold tracking-wide border-b-2 px-3 sm:px-6 transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeSubMode === 'mendelu_mikro'
               ? 'border-emerald-600 text-emerald-800 font-extrabold'
               : 'border-transparent text-stone-500 hover:text-stone-800'
           }`}
         >
-          🪵 MENDELU Makro Test 2
+          🪵 Makro Test 2
         </button>
       </div>
 
@@ -782,9 +787,9 @@ export const QuizMode: React.FC<QuizModeProps> = ({
                 <div>
                   <h3 className="text-sm font-black text-stone-900 flex items-center space-x-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
-                    <span>{activeSubMode === 'mendelu_makro' ? '🪵 MENDELU Makroskopický test 1' : '🪵 MENDELU Makroskopický test 2'}</span>
+                    <span>{activeSubMode === 'mendelu_makro' ? '🪵 Makroskopický test 1' : '🪵 Makroskopický test 2'}</span>
                   </h3>
-                  <p className="text-[10.5px] text-stone-500 font-medium">Oficiální výukové testové sady z Lesnické a dřevařské fakulty MENDELU</p>
+                  <p className="text-[10.5px] text-stone-500 font-medium">Praktická testová sada z makroskopické stavby dřevin</p>
                 </div>
                 {mendelSubmitted && mendelScore !== null && (
                   <span className="text-xs font-mono font-extrabold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -862,11 +867,11 @@ export const QuizMode: React.FC<QuizModeProps> = ({
                       <div className="grid grid-cols-1 gap-3">
                         {/* Main big image, stretched beautifully */}
                         <div 
-                          className="relative rounded-2xl overflow-hidden border border-stone-250 shadow-sm bg-stone-50 aspect-square w-full select-none group cursor-zoom-in"
+                          className="relative rounded-2xl overflow-hidden border border-stone-250 shadow-sm bg-stone-50 aspect-square w-full max-h-[290px] md:max-h-none flex items-center justify-center select-none group cursor-zoom-in"
                           onClick={() => setZoomedTestImage(mendelQuestions[currentMendelIndex].images![0])}
                         >
                           <img
-                            src={`/api/image-proxy?url=${encodeURIComponent(`https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex].imageFolder}/obr/${mendelQuestions[currentMendelIndex].images![0]}`)}`}
+                            src={getProxiedImageUrl(`https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex].imageFolder}/obr/${mendelQuestions[currentMendelIndex].images![0]}`)}
                             onError={(e) => {
                               e.currentTarget.src = `https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex].imageFolder}/obr/${mendelQuestions[currentMendelIndex].images![0]}`;
                             }}
@@ -892,7 +897,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({
                                 className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 shadow-4xs bg-stone-50 cursor-pointer group select-none"
                               >
                                 <img
-                                  src={`/api/image-proxy?url=${encodeURIComponent(`https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex].imageFolder}/obr/${filename}`)}`}
+                                  src={getProxiedImageUrl(`https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex].imageFolder}/obr/${filename}`)}
                                   onError={(e) => {
                                     e.currentTarget.src = `https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex].imageFolder}/obr/${filename}`;
                                   }}
@@ -1057,7 +1062,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({
           
           <div className="max-w-4xl max-h-[82vh] bg-white rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
             <img 
-              src={`/api/image-proxy?url=${encodeURIComponent(`https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex]?.imageFolder || 'makro'}/obr/${zoomedTestImage}`)}`}
+              src={getProxiedImageUrl(`https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex]?.imageFolder || 'makro'}/obr/${zoomedTestImage}`)}
               onError={(e) => {
                 e.currentTarget.src = `https://stavbadreva.ldf.mendelu.cz/lexikon/${mendelQuestions[currentMendelIndex]?.imageFolder || 'makro'}/obr/${zoomedTestImage}`;
               }}

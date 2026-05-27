@@ -630,7 +630,7 @@ export const KEY_NODES: KeyNode[] = [
   {
     id: 'start',
     title: 'Neznámý vzorek dřeva',
-    subtitle: 'Porovnejte vzorek dřevem s popisem a zvolte základní skupinu:',
+    subtitle: 'Porovnejte vzorek dřeva s popisem a zvolte základní skupinu:',
     description: 'Nejprve určíme, zda se jedná o dřevo jehličnatých nebo listnatých stromů na základě přítomnosti cév (pórů) a uspořádání dřeňových paprsků.',
     cutImage: 'PRT',
     choices: [
@@ -1247,6 +1247,97 @@ export const DETECTIVE_CASES = [
       'Dřeňové paprsky jsou zřetelně viditelné úplně na všech řezech.',
       'Na tangenciálu tvoří vřetena (svislé čárky) vysoká přesně 1 až 5 milimetrů.',
       'Na radiálním řezu tvoří sytá lesklá rudohnědá zrcátka.'
+    ]
+  },
+  {
+    id: 'case_6',
+    title: 'Zamodralé trámy ze staré půdy',
+    difficulty: 'pokročilý' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'borovice_lesni')!,
+    clues: [
+      'Jedná se o jehličnatou dřevinu.',
+      'Dřevo je poměrně lehké a měkké, s velmi intenzivní a sladkou pryskyřičnou vůní.',
+      'Běl je mimořádně široká, nažloutlá a u mnoha starých trámů má typické šedomodré zbarvení způsobené neškodnými houbami (tzv. zamodrání).',
+      'Pryskyřičné kanálky jsou velmi četné a velké, takže jsou na příčném řezu jasně patrné i bez lupy jako drobné tečky.',
+      'Jádro je ostře ohraničené, mírně měděně až červenorůžově hnědé.'
+    ]
+  },
+  {
+    id: 'case_7',
+    title: 'Tajemství rezonančních houslí',
+    difficulty: 'pokročilý' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'smrk')!,
+    clues: [
+      'Jedná se o jehličnatou dřevinu.',
+      'Dřevo je mimořádně lehké, světlé, žlutobílé bez pravého barevného jádra.',
+      'Letokruhy jsou velmi úzké, pravidelné a rovnoměrné (cca 1–2 mm), což dodává dřevu skvělou pružnost.',
+      'Na příčném řezu najdeme občasné, velmi drobné, pod lupou sotva viditelné pryskyřičné kanálky.',
+      'Při poklepu má dřevo čistý, jasně zvonivý hudební tón (využívá se jako rezonanční deska smyčcových nástrojů).'
+    ]
+  },
+  {
+    id: 'case_8',
+    title: 'Starožitná truhla z hradní kaple',
+    difficulty: 'začátečník' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'dub')!,
+    clues: [
+      'Kruhovitě pórovitý listnáč s nápadnými ročními kruhy.',
+      'Jádro je tmavě hnědé až šedohnědé, běl je světlá a velmi úzká.',
+      'Má extrémně široké a masivní dřeňové paprsky, které jsou na příčném řezu jasně patrné jako světlé radiální linky.',
+      'Na radiálním řezu tvoří tyto paprsky velké lesklé plošky (tzv. zrcátka).',
+      'Dřevo voní kysele po tříslovinách a je mimořádně těžké, tvrdé a odolné.'
+    ]
+  },
+  {
+    id: 'case_9',
+    title: 'Trvanlivý lodní stěžňový trám',
+    difficulty: 'pokročilý' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'modrin')!,
+    clues: [
+      'Jehličnatá dřevina s velmi výrazným fládrem a úzkou nažloutlou bělí.',
+      'Jádro je velmi tmavé, cihlově červené až červenohnědé a tvoří většinu průřezu.',
+      'Přechod mezi jarním a letním dřevem v letokruhu je extrémně ostrý.',
+      'Pryskyřičné kanálky jsou přítomné, ale velmi malé, roztroušeně viditelné jako ojedinělé tečky na příčném řezu.',
+      'Dřevo má vysoký podíl pryskyřice, voní nakysle a má pověst „evropského teaku“ díky své voděodolnosti.'
+    ]
+  },
+  {
+    id: 'case_10',
+    title: 'Zvonivá násada středověkého kopí',
+    difficulty: 'začátečník' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'jasan')!,
+    clues: [
+      'Kruhovitě pórovitá listnatá dřevina s nápadnými letokruhy.',
+      'Na rozdíl od dubu má velmi úzké, téměř neviditelné dřeňové paprsky.',
+      'Jádro je nepravidelně hnědé (často s tmavšími olivovými zónami), běl je velmi široká, smetanově bílá.',
+      'Dřevo je extrémně pružné, houževnaté a tvrdé, ideální pro rukojeť sekery, kopí nebo sportovní nářadí.',
+      'Jarní cévy v letokruhu tvoří pouhým okem dobře viditelný prstenec pórů.'
+    ]
+  },
+  {
+    id: 'case_11',
+    title: 'Ztracený barokní andělíček',
+    difficulty: 'pokročilý' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'lipa')!,
+    clues: [
+      'Roztroušeně pórovitý listnáč s velmi jemnou, homogenní stavbou.',
+      'Nemá rozlišené jádro a běl (dřevo je jednotně žlutobílé až narůžovělé).',
+      'Letokruhy jsou velmi nezřetelné, dřeňové paprsky jsou tenké a sotva viditelné i pod lupou.',
+      'Dřevo je mimořádně měkké, lehké, neštípe se a dá se snadno řezat ve všech směrech (ideální pro řezbáře).',
+      'Má jemnou, nenápadnou sladkou vůni.'
+    ]
+  },
+  {
+    id: 'case_12',
+    title: 'Tajemství intarzie šlechtické komody',
+    difficulty: 'expert' as const,
+    targetSpecies: ALL_SPECIES.find(s => s.id === 'oresak')!,
+    clues: [
+      'Jedná se o polokruhovitě pórovitý listnáč, kde velikost cév plynule klesá od jarního okraje k letnímu dříví.',
+      'Jádro je nádherně čokoládově hnědé až tmavošedé s tmavými pruhy a fialovým nádechem, běl je úzká a šedavě bílá.',
+      'Dřevo je středně tvrdé, těžké, výborně se leští a na řezu má matný hedvábný lesk.',
+      'Dřeňové paprsky jsou viditelné jako velmi jemný řádkový vzor na radiálním řezu.',
+      'Dřevo má velmi specifickou charakteristickou ořechovou vůni.'
     ]
   }
 ];

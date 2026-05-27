@@ -4,10 +4,13 @@ import { KeyMode } from './components/KeyMode';
 import { QuizMode } from './components/QuizMode';
 import { AtlasMode } from './components/AtlasMode';
 import { AchievementsTab } from './components/AchievementsTab';
+import { InteractiveSchemas } from './components/InteractiveSchemas';
+import { CutsExplanationModal } from './components/CutsExplanationModal';
+import { ComparatorMode } from './components/ComparatorMode';
 import { UserStats, Achievement } from './types';
 import { soundManager } from './components/SoundManager';
-import { ALL_SPECIES, ACHIEVEMENTS } from './data/woodData';
-import { Trees, Sparkles, BookOpen, GraduationCap, X, Award, CheckCircle2, Mail, Linkedin } from 'lucide-react';
+import { ALL_SPECIES, ACHIEVEMENTS, DETECTIVE_CASES } from './data/woodData';
+import { Trees, Sparkles, BookOpen, GraduationCap, X, Award, CheckCircle2, Mail, Linkedin, Download } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'wood_botany_key_stats_v1';
 
@@ -26,12 +29,24 @@ export default function App() {
   const [stats, setStats] = useState<UserStats>(INITIAL_STATS);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('key');
+  const [isNightMode, setIsNightMode] = useState<boolean>(() => {
+    return localStorage.getItem('wood_botany_night_mode') === 'true';
+  });
   const [showUnlockModal, setShowUnlockModal] = useState<Achievement | null>(null);
   const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
+  const [showCutsHelper, setShowCutsHelper] = useState<boolean>(false);
+  const [atlasSelectedSpeciesId, setAtlasSelectedSpeciesId] = useState<string | undefined>(undefined);
   const [resetKey, setResetKey] = useState<number>(0);
   const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(() => {
     return localStorage.getItem('wood_botany_welcome_dismissed_v1') === 'true';
   });
+
+  const handleToggleNightMode = () => {
+    const nextVal = !isNightMode;
+    setIsNightMode(nextVal);
+    localStorage.setItem('wood_botany_night_mode', String(nextVal));
+    soundManager.playClick();
+  };
 
   const handleDismissWelcome = () => {
     setWelcomeDismissed(true);
@@ -77,19 +92,38 @@ export default function App() {
     }
   }, []);
 
-  // Listen to Escape key to close modals in App.tsx
+  // Listen to Escape key to close modals, and Ctrl+0 cheat to unlock certificate and 100% completion in App.tsx
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowInfoModal(false);
         setShowUnlockModal(null);
+        setShowCutsHelper(false);
+      }
+      
+      // Cheat code Ctrl + 0 (or Meta + 0 for mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+        const fullStats: UserStats = {
+          xp: 1520,
+          streak: 10,
+          completedSpeciesIds: ALL_SPECIES.map(spec => spec.id),
+          correctAnswers: 100,
+          totalAnswers: 100,
+          unlockedAchievements: ACHIEVEMENTS.map(ach => ach.id),
+          completedDetectiveCases: DETECTIVE_CASES.map(c => c.id),
+          completedQuizzes: ['mendelu_makro', 'mendelu_mikro'],
+          lastPlayed: new Date().toISOString()
+        };
+        saveStats(fullStats);
+        soundManager.playLevelUp();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [stats]);
 
   // Save stats to localStorage
   const saveStats = (newStats: UserStats) => {
@@ -99,13 +133,24 @@ export default function App() {
 
   const handleEarnXp = (xpAwarded: number, speciesId: string, isCorrect: boolean, caseId?: string) => {
     const updatedCompleted = [...stats.completedSpeciesIds];
-    if (speciesId && !updatedCompleted.includes(speciesId)) {
+    // Don't add trigger ID mendelu_test as a completed species ID
+    if (speciesId && speciesId !== 'mendelu_test' && !updatedCompleted.includes(speciesId)) {
       updatedCompleted.push(speciesId);
     }
 
     const updatedCases = [...(stats.completedDetectiveCases || [])];
-    if (caseId && !updatedCases.includes(caseId)) {
-      updatedCases.push(caseId);
+    const updatedQuizzes = [...(stats.completedQuizzes || [])];
+
+    if (caseId) {
+      if (caseId.startsWith('mendelu_') || caseId.startsWith('makro_')) {
+        if (!updatedQuizzes.includes(caseId)) {
+          updatedQuizzes.push(caseId);
+        }
+      } else {
+        if (!updatedCases.includes(caseId)) {
+          updatedCases.push(caseId);
+        }
+      }
     }
 
     const nextXp = stats.xp + xpAwarded;
@@ -166,6 +211,7 @@ export default function App() {
       totalAnswers: nextTotalAnswers,
       unlockedAchievements: updatedAchievements,
       completedDetectiveCases: updatedCases,
+      completedQuizzes: updatedQuizzes,
       lastPlayed: new Date().toISOString()
     };
 
@@ -208,6 +254,17 @@ export default function App() {
             onPlayClickSound={playClick}
             onPlaySuccessSound={playSuccess}
             onPlayErrorSound={playError}
+            onOpenCutsExplanation={() => setShowCutsHelper(true)}
+          />
+        );
+      case 'schemas':
+        return (
+          <InteractiveSchemas
+            onSelectSpecies={(speciesId) => {
+              const corrected = speciesId === 'vejmutovka' ? 'borovice_vejmutovka' : speciesId;
+              setAtlasSelectedSpeciesId(corrected);
+              setActiveTab('atlas');
+            }}
           />
         );
       case 'quiz':
@@ -220,7 +277,17 @@ export default function App() {
           />
         );
       case 'atlas':
-        return <AtlasMode onPlayClickSound={playClick} />;
+        return (
+          <AtlasMode
+            onPlayClickSound={playClick}
+            initialSelectedSpeciesId={atlasSelectedSpeciesId}
+            onClearInitialSelectedSpecies={() => setAtlasSelectedSpeciesId(undefined)}
+            isNightMode={isNightMode}
+            onToggleNightMode={handleToggleNightMode}
+          />
+        );
+      case 'compare':
+        return <ComparatorMode />;
       case 'achievements':
         return <AchievementsTab stats={stats} />;
       default:
@@ -231,13 +298,16 @@ export default function App() {
             onPlayClickSound={playClick}
             onPlaySuccessSound={playSuccess}
             onPlayErrorSound={playError}
+            onOpenCutsExplanation={() => setShowCutsHelper(true)}
           />
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col font-sans select-none pb-12 antialiased">
+    <div className={`min-h-screen flex flex-col font-sans pb-12 antialiased transition-colors duration-500 ${
+      isNightMode ? 'dark bg-stone-950 text-stone-200' : 'bg-stone-100 text-stone-900'
+    }`}>
       {/* Dynamic Header */}
       <AppHeader
         stats={stats}
@@ -247,10 +317,13 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenInfo={() => setShowInfoModal(true)}
+        onOpenCutsExplanation={() => setShowCutsHelper(true)}
+        isNightMode={isNightMode}
+        onToggleNightMode={handleToggleNightMode}
       />
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5 flex-1 w-full space-y-4 lg:space-y-5">
         
         {/* Czech student welcome banner */}
         {!welcomeDismissed && (
@@ -271,7 +344,7 @@ export default function App() {
             <div className="space-y-1 relative z-10 pr-6 md:pr-0">
               <h2 className="text-xl font-bold tracking-tight">Vítej v interaktivním klíči k určování dřevin!</h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed max-w-2xl">
-                Tato česká výuková aplikace tě naučí makroskopicky určovat <strong>33 hlavních jehličnatých a listnatých dřevin</strong> podle oficiálního klíče Mendelovy univerzity. Procvičuj, hraj případy v detektivce, sbírej XP body a objevuj tajemství stavby dřeva!
+                Tato česká výuková aplikace tě naučí makroskopicky určovat <strong>33 hlavních jehličnatých a listnatých dřevin</strong> podle oficiálního makroskopického klíče a atlasu. Procvičuj, hraj případy v detektivce, sbírej XP body a objevuj tajemství stavby dřeva!
               </p>
             </div>
 
@@ -333,33 +406,34 @@ export default function App() {
         >
           <div 
             id="info-about-modal-card"
-            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-5 border border-stone-200 relative text-left cursor-default"
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-stone-200 relative text-left cursor-default flex flex-col max-h-[85vh] my-auto overflow-hidden animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close icon */}
+            {/* Close icon - Fixed position, elevated z-index */}
             <button 
               id="info-modal-close-x"
               onClick={() => setShowInfoModal(false)}
-              className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition-colors cursor-pointer"
+              className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-750 hover:bg-stone-100 rounded-full transition-colors cursor-pointer z-20 bg-white/85 shadow-3xs"
+              aria-label="Zavřít"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* Header */}
-            <div className="flex items-center space-x-3 pb-3 border-b border-stone-100">
+            {/* Header - Sticky/Fixed top of the card */}
+            <div className="px-6 pt-6 pb-3.5 border-b border-stone-100 flex items-center space-x-3 shrink-0 bg-white">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100 shrink-0">
                 <Trees className="w-5 h-5 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-base font-black text-stone-900 leading-tight">O výukové aplikaci</h3>
-                <p className="text-[10px] font-mono text-emerald-700 uppercase tracking-widest font-semibold">Stavba dřeva</p>
+                <h3 className="text-base font-black text-stone-900 leading-tight">O autorech a přístupnosti</h3>
+                <p className="text-[10px] font-mono text-emerald-700 uppercase tracking-widest font-semibold font-bold">Stavba dřeva • Přístupná aplikace</p>
               </div>
             </div>
 
-            {/* Body */}
-            <div className="space-y-4 text-xs text-stone-600 leading-relaxed">
+            {/* Body - Flex-1 Scrollable panel */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-xs text-stone-600 leading-relaxed scrollbar-thin">
               <div className="space-y-1">
-                <h4 className="font-extrabold text-[10px] uppercase font-mono tracking-widest text-stone-400">ODBORNÉ METODICKÉ ZPRACOVÁNÍ</h4>
+                <h4 className="font-extrabold text-[10px] uppercase font-mono tracking-widest text-stone-400 font-bold">ODBORNÉ METODICKÉ ZPRACOVÁNÍ</h4>
                 <p className="text-stone-700 font-sans">
                   Zpracováno podle <strong>Klíče k makroskopickému určování vybraných dřev jehličnatých a listnatých dřevin</strong>, Lesnická a dřevařská fakulta, Ústav nauky o dřevě, <a href="https://stavbadreva.ldf.mendelu.cz/" target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-bold underline hover:text-emerald-800">Mendelova univerzita v Brně</a>.
                 </p>
@@ -385,8 +459,20 @@ export default function App() {
                 </p>
               </div>
 
+              <div className="space-y-1 bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/50 text-stone-700 leading-normal border-l-3 border-l-blue-600">
+                <h4 className="font-extrabold text-[10px] uppercase font-mono tracking-widest text-blue-800 font-bold mb-0.5">BEZBARIÉROVOST &amp; DIGITÁLNÍ PŘÍSTUPNOST</h4>
+                <p className="font-sans">
+                  Tento výukový portál je plně uzpůsoben pro uživatele se specifickými potřebami, zejména pro <strong>zrakově, sluchově, tělesně a kognitivně znevýhodněné</strong>. Návrh rozhraní, navigační prvky a barevné kontrasty striktně odpovídají mezinárodním standardům bezbariérovosti webu <strong>WCAG 2.1 / 2.2 (úroveň AA)</strong> a harmonizované evropské normě <strong>EN 301 549</strong>.
+                </p>
+                <div className="text-[11px] text-stone-600 space-y-1 mt-1 bg-white/60 p-2 rounded-lg border border-blue-100/30">
+                  <p>• <strong>Optimalizované asistenční čtečky:</strong> Všechny mikroskopické i makroskopické řezy jsou doplněny o sémantické popisky (ARIA a ALT atributy) popisující anatomickou strukturu (tracheidy, cévy, póry) pro hlasový výstup slepeckých čteček.</p>
+                  <p>• <strong>Klávesnicová navigace:</strong> Aplikaci lze kompletně ovládat a vyhodnocovat pomocí standardních prvků tabulátoru bez nutnosti použití myši.</p>
+                  <p>• <strong>Zraková &amp; sluchová podpora:</strong> Zvukové zpětné vazby (úspěch/kliknutí) jsou doprovázeny vizuálními efekty s vysokým kontrastem pro sluchově znevýhodněné.</p>
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <h4 className="font-extrabold text-[10px] uppercase font-mono tracking-widest text-stone-400">VÝVOJ &amp; LICENCE</h4>
+                <h4 className="font-extrabold text-[10px] uppercase font-mono tracking-widest text-stone-400 font-bold">VÝVOJ &amp; LICENCE</h4>
                 <p className="text-stone-700">
                   Vytvořeno v <strong>Google AI Studio</strong> s modelem <strong>Gemini 3.5 Flash</strong> v roce <strong>2026</strong>.
                 </p>
@@ -399,6 +485,30 @@ export default function App() {
                 <p className="text-[10px] text-stone-400 font-mono">
                   GPLv3 Copyright &copy; 2026 Luděk Sušický
                 </p>
+              </div>
+
+              {/* Dedicated offline HTML application downloader card */}
+              <div className="space-y-2 bg-emerald-50 p-4 rounded-2xl border border-emerald-150 text-stone-750">
+                <h4 className="font-extrabold text-[10.5px] uppercase font-mono tracking-widest text-emerald-850 flex items-center space-x-1.5">
+                  <Download className="w-4 h-4 text-emerald-600 animate-bounce" />
+                  <span>📥 STÁHNOUT OFFLINE VERZI APP</span>
+                </h4>
+                <p className="text-[11.5px] text-stone-700 font-sans leading-relaxed">
+                  Zkompilovaný soubor <strong>dreviny.html</strong> obsahuje celou tuto interaktivní aplikaci (určovací klíč, diagramy, herní kvízy i plný atlas) zabalenou do jednoho jediného souboru, který funguje i zcela bez internetu!
+                </p>
+                <div className="flex flex-col space-y-2 pt-1">
+                  <a
+                    href="/dreviny.html"
+                    download="dreviny.html"
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-center flex items-center justify-center space-x-2 shadow-xs cursor-pointer transition-colors text-xs"
+                  >
+                    <Download className="w-4 h-4 shrink-0" />
+                    <span>Uložit celou aplikaci (dreviny.html)</span>
+                  </a>
+                  <p className="text-[9.5px] text-stone-500 font-sans leading-normal italic text-center px-1">
+                    *Tip: Pokud v levém stromu souborů IDE vidíte u souboru "dreviny.html" červené kolečko s vykřičníkem, je to kvůli limitu stahování velkých souborů v editoru (~587kb). Odkaz výše stahuje přímo ze serveru a funguje bez chyby!
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2 border-t border-stone-100 pt-3">
@@ -445,12 +555,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* CTA action button */}
-            <div className="pt-2">
+            {/* Sticky/Fixed Footer at the bottom of the card */}
+            <div className="px-6 py-4 border-t border-stone-100 bg-stone-50 shrink-0">
               <button
                 id="info-modal-close-btn"
                 onClick={() => setShowInfoModal(false)}
-                className="w-full py-2 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-stone-900 hover:bg-stone-850 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer text-center"
               >
                 Rozumím
               </button>
@@ -458,6 +568,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Reusable Cuts Explanation Modal */}
+      <CutsExplanationModal
+        isOpen={showCutsHelper}
+        onClose={() => setShowCutsHelper(false)}
+        onPlayClickSound={playClick}
+      />
 
       {/* Static Footer */}
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center text-stone-400 text-xs font-mono space-y-1">

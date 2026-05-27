@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, ChevronRight, HelpCircle, RefreshCcw, Info, Sparkles, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronRight, HelpCircle, RefreshCcw, Info, Sparkles, AlertCircle, GitBranch, X } from 'lucide-react';
 import { KeyNode, TreeSpecies } from '../types';
 import { KEY_NODES, ALL_SPECIES } from '../data/woodData';
 import { WoodCutVisualizer, BotanicalReferences } from './WoodCutVisualizer';
 import { soundManager } from './SoundManager';
-import { InteractiveSchemas } from './InteractiveSchemas';
 
 const LogCutSvg: React.FC<{ cutType: 'P' | 'R' | 'T'; className?: string }> = ({ cutType, className = "w-full max-h-[140px]" }) => {
   switch (cutType) {
@@ -109,10 +108,10 @@ const LogCutSvg: React.FC<{ cutType: 'P' | 'R' | 'T'; className?: string }> = ({
             </clipPath>
           </defs>
 
-          {/* Left wing of the amber glass plane -drawn BEHIND the log- */}
-          <polygon points="70,52 85,47 85,107 70,112" fill="rgba(245, 158, 11, 0.22)" stroke="#d97706" strokeWidth="1.8" />
-          <path d="M 77,75 L 77,90" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M 74,86 L 77,90 L 80,86" fill="none" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Left wing of the amber glass plane -drawn BEHIND the log- (wider and up to height of log) */}
+          <polygon points="40,61 85,47 85,107 40,121" fill="rgba(245, 158, 11, 0.22)" stroke="#d97706" strokeWidth="1.8" />
+          <path d="M 52,75 L 52,95" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M 49,91 L 52,95 L 55,91" fill="none" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 
           {/* Trunk main body */}
           <path d="M 45,35 L 45,95 A 35,14 0 0,0 115,95 L 115,35 Z" fill="#6d5a47" stroke="#4c3d30" strokeWidth="1.5" />
@@ -141,12 +140,10 @@ const LogCutSvg: React.FC<{ cutType: 'P' | 'R' | 'T'; className?: string }> = ({
             <path d="M 85,107 Q 95,90 105,99" fill="none" stroke="#8e6844" strokeWidth="1.2" opacity="0.7" />
           </g>
 
-          {/* Cutting plane - Amber vertical glass pane */}
-          <polygon points="85,47 120,35 120,95 85,107" fill="rgba(245, 158, 11, 0.25)" stroke="#d97706" strokeWidth="1.8" />
-
-          {/* Direction vertical arrows on both wings */}
-          <path d="M 102,62 L 102,77" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M 99,73 L 102,77 L 105,73" fill="none" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Front wing of the amber glass plane -drawn IN FRONT of the log- */}
+          <polygon points="85,47 135,31 135,91 85,107" fill="rgba(245, 158, 11, 0.25)" stroke="#d97706" strokeWidth="1.8" />
+          <path d="M 122,55 L 122,75" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M 119,71 L 122,75 L 125,71" fill="none" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     default:
@@ -159,6 +156,7 @@ interface KeyModeProps {
   onPlayClickSound: () => void;
   onPlaySuccessSound: () => void;
   onPlayErrorSound: () => void;
+  onOpenCutsExplanation: () => void;
 }
 
 const LOCAL_PROGRESS_KEY = 'wood_botany_key_progress_v1';
@@ -167,7 +165,8 @@ export const KeyMode: React.FC<KeyModeProps> = ({
   onEarnXp,
   onPlayClickSound,
   onPlaySuccessSound,
-  onPlayErrorSound
+  onPlayErrorSound,
+  onOpenCutsExplanation
 }) => {
   const jedleSpecies = ALL_SPECIES.find(s => s.id === 'jedle');
   
@@ -201,9 +200,9 @@ export const KeyMode: React.FC<KeyModeProps> = ({
   });
 
   const [hoveredChoiceHint, setHoveredChoiceHint] = useState<'P' | 'R' | 'T' | 'PRT' | null>(null);
-  const [showHelperModal, setShowHelperModal] = useState<boolean>(false);
-  const [helperCutType, setHelperCutType] = useState<'P' | 'R' | 'T'>('P');
-  const [keyViewMode, setKeyViewMode] = useState<'step' | 'schemas'>('step');
+  const [finishedActiveCutTab, setFinishedActiveCutTab] = useState<'P' | 'R' | 'T'>('P');
+  const [selectedCutType, setSelectedCutType] = useState<'P' | 'R' | 'T'>('P');
+  const [mobileHelperExpanded, setMobileHelperExpanded] = useState<boolean>(false);
 
   const [finishedSpecies, setFinishedSpecies] = useState<TreeSpecies | null>(() => {
     const raw = localStorage.getItem(LOCAL_PROGRESS_KEY);
@@ -227,18 +226,7 @@ export const KeyMode: React.FC<KeyModeProps> = ({
     }));
   }, [currentNodeId, history, finishedSpecies]);
 
-  // Keydown Escape handler for modals
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowHelperModal(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
+  // Keydown interactive handlers are now defined below to avoid hoisting ordering constraints
 
   const currentNode = KEY_NODES.find(n => n.id === currentNodeId) || KEY_NODES[0];
 
@@ -275,6 +263,49 @@ export const KeyMode: React.FC<KeyModeProps> = ({
     setHistory([]);
     setFinishedSpecies(null);
   };
+
+  // Comprehensive keyboard navigation handler (Escape to reset, Backspace/ArrowLeft to go back, 1-9 to choose)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in some input (not applicable in this tab, but good practice)
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (finishedSpecies) {
+          handleReset();
+          return;
+        }
+      }
+
+      // If active question is opened (finishedSpecies is NOT set)
+      if (!finishedSpecies) {
+        // Backspace or ArrowLeft to go back
+        if ((e.key === 'Backspace' || e.key === 'ArrowLeft') && history.length > 0) {
+          e.preventDefault();
+          handleBack();
+          return;
+        }
+
+        // Numeric keys 1, 2, 3...
+        const activeChoices = currentNode?.choices || [];
+        const isNumeric = /^[1-9]$/.test(e.key);
+        if (isNumeric) {
+          const choiceIndex = parseInt(e.key, 10) - 1;
+          if (choiceIndex >= 0 && choiceIndex < activeChoices.length) {
+            e.preventDefault();
+            handleChoice(activeChoices[choiceIndex].targetNodeId);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [finishedSpecies, currentNode, history]);
 
   // Generate readable history trail
   const getProgressTrail = () => {
@@ -339,6 +370,7 @@ export const KeyMode: React.FC<KeyModeProps> = ({
   };
 
   const illustrationSpecies = getIllustrationSpecies();
+  const activeSidebarCutType = hoveredChoiceHint ? (hoveredChoiceHint === 'PRT' ? 'P' : hoveredChoiceHint) : selectedCutType;
 
   const getCutIndicatorColor = (cut: 'P' | 'R' | 'T' | 'PRT') => {
     switch (cut) {
@@ -348,49 +380,97 @@ export const KeyMode: React.FC<KeyModeProps> = ({
       case 'PRT': return 'bg-purple-100 text-purple-900 border-purple-300';
     }
   };
+  // Generate vertical progress tree on desktop left
+  const renderVerticalProgressTree = () => {
+    return (
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-3xs flex flex-col h-full space-y-4">
+        <div className="flex items-center space-x-2 border-b border-stone-100 pb-3">
+          <GitBranch className="w-4 h-4 text-emerald-600 shrink-0" />
+          <h3 className="text-xs font-bold text-stone-700 uppercase tracking-wider font-mono">Rozhodovací cesta</h3>
+        </div>
+        
+        <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+          {/* Start Node */}
+          <div className="relative pl-6">
+            {(history.length > 0 || currentNodeId !== 'start') && (
+              <div className="absolute left-2.5 top-5 bottom-[-16px] w-0.5 border-l-2 border-dashed border-stone-200" />
+            )}
+            <div className={`absolute left-1.5 top-1 w-2.5 h-2.5 rounded-full border-2 transition-all ${
+              currentNodeId === 'start' 
+                ? 'bg-emerald-600 border-emerald-250 ring-4 ring-emerald-50' 
+                : 'bg-stone-300 border-stone-150'
+            }`} />
+            
+            <button
+              onClick={() => {
+                if (currentNodeId !== 'start') {
+                  onPlayClickSound();
+                  setHistory([]);
+                  setCurrentNodeId('start');
+                  setFinishedSpecies(null);
+                }
+              }}
+              disabled={currentNodeId === 'start'}
+              className={`text-left block text-xs font-bold font-sans transition-all leading-tight ${
+                currentNodeId === 'start' ? 'text-emerald-700' : 'text-stone-600 hover:text-emerald-600'
+              }`}
+            >
+              Klíč start
+            </button>
+            <span className="block text-[10px] text-stone-400 font-mono mt-0.5">Výchozí rozcestník</span>
+          </div>
 
-  const handleSelectSpeciesFromSchema = (speciesId: string) => {
-    const targetId = speciesId === 'vejmutovka' ? 'borovice_vejmutovka' : speciesId;
-    const found = ALL_SPECIES.find(s => s.id === targetId);
-    if (found) {
-      setFinishedSpecies(found);
-      setKeyViewMode('step');
-      onPlaySuccessSound();
-    }
+          {/* History Item Nodes */}
+          {history.map((hid, index) => {
+            const node = KEY_NODES.find(n => n.id === hid);
+            return (
+              <div key={hid} className="relative pl-6">
+                <div className="absolute left-2.5 top-5 bottom-[-16px] w-0.5 border-l-2 border-dashed border-stone-200" />
+                <div className="absolute left-1.5 top-1 w-2.5 h-2.5 rounded-full border-2 bg-stone-300 border-stone-150" />
+                
+                <button
+                  onClick={() => {
+                    onPlayClickSound();
+                    const indexInHistory = history.indexOf(hid);
+                    setHistory(history.slice(0, indexInHistory));
+                    setCurrentNodeId(hid);
+                    setFinishedSpecies(null);
+                  }}
+                  className="text-left block text-xs font-bold text-stone-600 hover:text-emerald-600 transition-colors leading-tight font-sans"
+                >
+                  {node?.title || hid}
+                </button>
+                <span className="block text-[9.5px] text-stone-400 font-mono mt-0.5 truncate max-w-[170px]">
+                  Tabulka: {hid}
+                </span>
+              </div>
+            );
+          })}
+
+          {/* Current Active Node */}
+          {currentNodeId !== 'start' && (
+            <div className="relative pl-6">
+              <div className="absolute left-1.5 top-1 w-2.5 h-2.5 rounded-full border-2 bg-emerald-600 border-emerald-250 ring-4 ring-emerald-50 animate-pulse" />
+              
+              <div className="text-left leading-tight">
+                <span className="block text-xs font-black text-emerald-800 font-sans">
+                  {currentNode.title}
+                </span>
+                <span className="block text-[9px] text-stone-500 font-mono mt-0.5">
+                  Aktivní krok: {currentNode.id}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-6">
-      {/* Sub Mode Switcher Bar */}
-      <div className="flex bg-stone-200/50 p-1 rounded-xl self-start w-full sm:w-auto overflow-hidden border border-stone-200 max-w-sm select-none">
-        <button
-          onClick={() => { onPlayClickSound(); setKeyViewMode('step'); }}
-          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            keyViewMode === 'step' 
-              ? 'bg-white text-stone-900 shadow-3xs' 
-              : 'text-stone-500 hover:text-stone-800'
-          }`}
-        >
-          👣 Průvodce určením
-        </button>
-        <button
-          onClick={() => { onPlayClickSound(); setKeyViewMode('schemas'); }}
-          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            keyViewMode === 'schemas' 
-              ? 'bg-white text-stone-900 shadow-3xs' 
-              : 'text-stone-500 hover:text-stone-800'
-          }`}
-        >
-          📊 Celková schémata klíče
-        </button>
-      </div>
-
-      {keyViewMode === 'schemas' ? (
-        <InteractiveSchemas onSelectSpecies={handleSelectSpeciesFromSchema} />
-      ) : (
-        <>
-          {/* progress & helper header */}
-          <div className="flex flex-wrap justify-between items-center bg-stone-50 border border-stone-200/60 rounded-xl p-3 gap-2">
+    <div className="space-y-4 lg:space-y-5">
+      {/* progress & helper header */}
+      <div className="lg:hidden flex flex-wrap justify-between items-center bg-stone-50 border border-stone-200/60 rounded-xl p-3 gap-2">
         <div className="flex flex-wrap items-center gap-1 overflow-x-auto py-1">
           <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider font-mono mr-2">Cesta:</span>
           <span className="flex items-center text-xs text-stone-500 font-medium">
@@ -399,14 +479,14 @@ export const KeyMode: React.FC<KeyModeProps> = ({
           {getProgressTrail()}
           {finishedSpecies && (
             <span className="flex items-center text-xs font-bold text-emerald-700">
-              <ChevronRight className="w-3" />
+               <ChevronRight className="w-3" />
               <span className="ml-1">{finishedSpecies.name}</span>
             </span>
           )}
         </div>
 
         <button
-          onClick={() => setShowHelperModal(true)}
+          onClick={onOpenCutsExplanation}
           className="flex items-center space-x-1 text-xs text-emerald-700 font-medium hover:text-emerald-800 transition-colors"
         >
           <HelpCircle className="w-3.5 h-3.5" />
@@ -416,11 +496,16 @@ export const KeyMode: React.FC<KeyModeProps> = ({
 
       {/* Main Grid: Interactive Form & Visual Mockup */}
       {!finishedSpecies ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Decision Node card */}
-          <div className="lg:col-span-7 bg-white border border-stone-200 rounded-2xl shadow-xs overflow-hidden flex flex-col h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-stretch">
+          {/* Left Column: Tree-like vertical progress sidebar (Desktop only) */}
+          <div className="hidden lg:block lg:col-span-2 h-full">
+            {renderVerticalProgressTree()}
+          </div>
+
+          {/* Center Column: Decision Node card */}
+          <div className="col-span-1 lg:col-span-6 bg-white border border-stone-200 rounded-2xl shadow-xs overflow-hidden flex flex-col h-full">
             {/* Node Title */}
-            <div className="p-6 bg-stone-50/50 border-b border-stone-100">
+            <div className="p-5 bg-stone-50/50 border-b border-stone-100">
               <div className="flex justify-between items-start gap-4">
                 <div>
                   <span className="text-[10px] font-bold text-emerald-700 font-mono tracking-widest uppercase bg-emerald-50 px-2 py-0.5 rounded">Tabulka: {currentNode.id}</span>
@@ -440,27 +525,38 @@ export const KeyMode: React.FC<KeyModeProps> = ({
                 )}
               </div>
               {currentNode.description && (
-                <div className="bg-stone-100/50 rounded-xl p-3.5 text-xs text-stone-600 border border-stone-200/40 mt-4 leading-relaxed">
+                <div className="bg-stone-100/50 rounded-xl p-3.5 text-xs text-stone-600 border border-stone-200/40 mt-3 leading-relaxed">
                   {currentNode.description}
                 </div>
               )}
             </div>
 
             {/* choices */}
-            <div className="p-6 space-y-4 flex-1">
-              {currentNode.choices.map((choice) => (
+            <div className="p-5 space-y-3 px-5 flex-1" role="group" aria-label="Možnosti rozhodovacího klíče">
+              {currentNode.choices.map((choice, index) => (
                 <div
                   key={choice.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleChoice(choice.targetNodeId)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleChoice(choice.targetNodeId);
+                    }
+                  }}
                   onMouseEnter={() => choice.cutHint && setHoveredChoiceHint(choice.cutHint)}
                   onMouseLeave={() => setHoveredChoiceHint(null)}
-                  className="group relative border border-stone-200/80 rounded-2xl p-5 hover:border-emerald-500 hover:bg-emerald-50/10 cursor-pointer transition-all duration-200 shadow-3xs"
+                  className="group relative border border-stone-205 rounded-xl p-4 hover:border-emerald-500 hover:bg-emerald-50/10 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-hidden cursor-pointer transition-all duration-200 shadow-3xs"
+                  aria-label={`Volba ${index + 1}: ${choice.text}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
-                    <div className="flex items-start gap-4">
-                      {/* radio bullet */}
-                      <div className="w-5 h-5 rounded-full border border-stone-300 group-hover:border-emerald-600 flex items-center justify-center mt-0.5 transition-colors bg-white shrink-0">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 scale-0 group-hover:scale-100 transition-transform duration-200" />
+                     <div className="flex items-start gap-4">
+                      {/* radio bullet with numeric shortcut label for high accessibility */}
+                      <div className="w-5 h-5 rounded-full border border-stone-300 group-hover:border-emerald-600 flex items-center justify-center mt-0.5 transition-colors bg-stone-50 shrink-0 group-focus-visible:border-emerald-600">
+                        <span className="text-[10px] font-mono font-bold text-stone-500 group-hover:text-emerald-700 transition-colors">
+                          {index + 1}
+                        </span>
                       </div>
 
                       {/* text content */}
@@ -489,100 +585,168 @@ export const KeyMode: React.FC<KeyModeProps> = ({
             </div>
           </div>
 
-          {/* Interactive illustration column */}
-          <div className="lg:col-span-5 flex flex-col">
-            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-3xs flex flex-col justify-between flex-1 space-y-4">
-              <h3 className="text-xs font-bold text-stone-500 uppercase tracking-widest font-mono">Dřevní struktura (pomocný model)</h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  onClick={() => { onPlayClickSound(); setHoveredChoiceHint('P'); }}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold tracking-wide transition-all font-mono ${
-                    (hoveredChoiceHint === 'P' || !hoveredChoiceHint)
-                      ? 'bg-emerald-600 text-white border-emerald-700'
-                      : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  Příčný (P)
-                </button>
-                <button
-                  onClick={() => { onPlayClickSound(); setHoveredChoiceHint('R'); }}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold tracking-wide transition-all font-mono ${
-                    hoveredChoiceHint === 'R'
-                      ? 'bg-blue-600 text-white border-blue-700'
-                      : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  Středový (R)
-                </button>
-                <button
-                  onClick={() => { onPlayClickSound(); setHoveredChoiceHint('T'); }}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold tracking-wide transition-all font-mono ${
-                    hoveredChoiceHint === 'T'
-                      ? 'bg-amber-600 text-white border-amber-700'
-                      : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                  }`}
-                >
-                  Tečný (T)
-                </button>
-              </div>
+          {/* Right Column: Interactive illustration panel */}
+          <div className="col-span-1 lg:col-span-4 flex flex-col h-full">
+            <div className="bg-white border border-stone-200 rounded-2xl shadow-3xs flex flex-col justify-start h-full overflow-hidden">
+              {/* Accordion header for mobile, standard section header for PC */}
+              <button
+                type="button"
+                onClick={() => {
+                  onPlayClickSound();
+                  setMobileHelperExpanded(!mobileHelperExpanded);
+                }}
+                className="w-full text-left p-4 flex items-center justify-between border-b border-stone-100 lg:border-b-0 lg:cursor-default"
+              >
+                <div className="flex flex-col">
+                  <h3 className="text-xs font-bold text-stone-500 uppercase tracking-widest font-mono">Dřevní struktura (pomocný model)</h3>
+                  <p className="text-[9.5px] text-stone-400 font-mono mt-0.5 lg:hidden">
+                    {mobileHelperExpanded ? "Kliknutním sbalíte pomocný model" : "Kliknutím rozbalíte 3D schéma a makro"}
+                  </p>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPlayClickSound();
+                      onOpenCutsExplanation();
+                    }}
+                    className="flex lg:hidden items-center space-x-1 text-xs text-emerald-700 font-semibold hover:text-emerald-800 transition-colors cursor-pointer mr-2"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Vysvětlivka řezů</span>
+                  </button>
+                  <span className="lg:hidden text-stone-400 font-bold text-lg select-none">
+                    {mobileHelperExpanded ? "−" : "+"}
+                  </span>
+                </div>
+              </button>
 
-              {/* Vector schema renders real-time according to decisions or hover hints in a dual bento setup */}
-              {(() => {
-                const activeSidebarCutType = hoveredChoiceHint === 'PRT' ? 'P' : (hoveredChoiceHint || 'P');
-                return (
-                  <div className="grid grid-cols-2 gap-4 items-stretch">
-                    {/* 3D Schema Card */}
-                    <div className="bg-stone-50 border border-stone-150 rounded-2xl p-4 flex flex-col items-center justify-between text-center min-h-[380px] md:min-h-[440px]">
-                      <div className="w-full flex-1 flex items-center justify-center">
-                        <LogCutSvg cutType={activeSidebarCutType} className="max-h-[280px] w-full transition-transform duration-300 hover:scale-[1.03]" />
-                      </div>
-                      <span className="mt-2.5 font-mono text-[10px] text-stone-500 font-extrabold uppercase tracking-wide">
-                        3D Schéma ({activeSidebarCutType})
-                      </span>
-                    </div>
-
-                    {/* Real Board Texture Card */}
-                    <div className="bg-stone-50 border border-stone-150 rounded-2xl p-4 flex flex-col items-center justify-between min-h-[380px] md:min-h-[440px]">
-                      <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-stone-100 shadow-inner">
-                        <WoodCutVisualizer
-                          species={illustrationSpecies}
-                          cutType={activeSidebarCutType}
-                          zoom={true}
-                          simplified={true}
-                          className="h-[280px] w-full rounded-xl object-cover transition-transform duration-300 hover:scale-[1.03]"
-                        />
-                      </div>
-                      <span className="mt-2.5 font-mono text-[10px] text-stone-500 font-extrabold uppercase tracking-wide truncate max-w-full text-center">
-                        Makro ({illustrationSpecies?.name || 'Vzor'})
-                      </span>
-                    </div>
+              {/* Collapsible Body */}
+              <div className={`p-4 pt-0 lg:pt-4 flex flex-col space-y-3 flex-1 justify-between ${mobileHelperExpanded ? 'block' : 'hidden lg:flex'}`}>
+                <div className="flex flex-col space-y-3">
+                  <div className="hidden lg:flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-stone-500 uppercase tracking-widest font-mono">Dřevní struktura (pomocný model)</h3>
+                    <button
+                      type="button"
+                      onClick={onOpenCutsExplanation}
+                      className="flex items-center space-x-1 text-xs text-emerald-700 font-semibold hover:text-emerald-800 transition-colors cursor-pointer"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      <span>Vysvětlivka řezů</span>
+                    </button>
                   </div>
-                );
-              })()}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { onPlayClickSound(); setSelectedCutType('P'); }}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold tracking-wide transition-all font-mono cursor-pointer ${
+                        activeSidebarCutType === 'P'
+                          ? 'bg-emerald-600 text-white border-emerald-700'
+                          : 'border-stone-200 text-stone-600 hover:bg-stone-50 bg-white'
+                      }`}
+                      aria-pressed={activeSidebarCutType === 'P'}
+                      aria-label="Příčný řez (P) - příčný řez dřevem kolmo k ose dřeně"
+                    >
+                      Příčný (P)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { onPlayClickSound(); setSelectedCutType('R'); }}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold tracking-wide transition-all font-mono cursor-pointer ${
+                        activeSidebarCutType === 'R'
+                          ? 'bg-blue-600 text-white border-blue-700'
+                          : 'border-stone-200 text-stone-600 hover:bg-stone-50 bg-white'
+                      }`}
+                      aria-pressed={activeSidebarCutType === 'R'}
+                      aria-label="Středový radiální řez (R) - řez procházející dření a rovnoběžný s dřeňovými paprsky"
+                    >
+                      Středový (R)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { onPlayClickSound(); setSelectedCutType('T'); }}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold tracking-wide transition-all font-mono cursor-pointer ${
+                        activeSidebarCutType === 'T'
+                          ? 'bg-amber-600 text-white border-amber-700'
+                          : 'border-stone-200 text-stone-600 hover:bg-stone-50 bg-white'
+                      }`}
+                      aria-pressed={activeSidebarCutType === 'T'}
+                      aria-label="Tečný tangenciální řez (T) - řez vedený tětivou rovnoběžně s osou kmene a kolmo k dřeňovým paprskům"
+                    >
+                      Tečný (T)
+                    </button>
+                  </div>
 
-              <div className="text-[11px] text-stone-400 bg-stone-50 p-2 rounded-xl border border-stone-100 font-mono text-center">
-                Mění se na základě vašich voleb. Ukazuje typickou makroskopickou stavbu dříví pro vybranou větev klíče.
+                  {/* Vector schema renders real-time according to decisions - Stacked vertically */}
+                  {(() => {
+                    return (
+                      <div className="grid grid-cols-1 gap-3 items-stretch">
+                        {/* 3D Schema Card */}
+                        <div className="bg-stone-50 border border-stone-150 rounded-2xl p-2.5 flex flex-col items-center justify-between text-center">
+                          <div className="w-full flex-1 flex items-center justify-center min-h-[110px] lg:min-h-[160px]">
+                            <LogCutSvg cutType={activeSidebarCutType} className="max-h-[110px] lg:max-h-[160px] w-auto h-auto transition-transform duration-300" />
+                          </div>
+                          <span className="mt-1.5 font-mono text-[9px] text-stone-500 font-extrabold uppercase tracking-wide">
+                            3D Schéma ({activeSidebarCutType})
+                          </span>
+                        </div>
+
+                        {/* Real Board Texture Card */}
+                        <div className="bg-stone-50 border border-stone-150 rounded-2xl p-2.5 flex flex-col items-center justify-between">
+                          <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-stone-100 shadow-inner">
+                            <WoodCutVisualizer
+                              species={illustrationSpecies}
+                              cutType={activeSidebarCutType}
+                              zoom={true}
+                              simplified={true}
+                              className="h-[110px] lg:h-[160px] w-full rounded-xl object-cover"
+                            />
+                          </div>
+                          <span className="mt-1.5 font-mono text-[9px] text-stone-500 font-extrabold uppercase tracking-wide truncate max-w-full text-center">
+                            Makro ({illustrationSpecies?.name || 'Vzor'})
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="text-[10px] text-stone-400 bg-stone-50 p-2.5 rounded-xl border border-stone-100 font-mono text-center leading-normal">
+                  Mění se na základě vašich voleb. Ukazuje typickou makroskopickou stavbu dříví pro vybranou větev klíče podle odborných podkladů LDF MENDELU.
+                </div>
               </div>
             </div>
           </div>
         </div>
       ) : (
         /* Final species screen */
-        <div className="bg-emerald-600 text-white rounded-3xl overflow-hidden shadow-xl border border-emerald-700 max-w-4xl mx-auto">
+        <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-stone-200 max-w-5xl mx-auto">
           {/* Top colored card banner */}
-          <div className="p-8 pb-1 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 relative overflow-hidden">
+          <div className="p-8 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-emerald-700 text-white relative overflow-hidden">
             {/* Background sparkle path */}
             <div className="absolute top-0 right-0 py-2 inline-flex opacity-10">
               <Sparkles className="w-64 h-64 text-white" />
             </div>
 
+            {/* Close cross button */}
+            <button
+              onClick={handleReset}
+              className="absolute top-3.5 right-3.5 p-1.5 text-emerald-100 hover:text-white hover:bg-emerald-600/60 rounded-full transition-all cursor-pointer z-25 bg-emerald-800/30 border border-emerald-500/10 shadow-3xs"
+              title="Zavřít a určit další vzorek"
+              aria-label="Zavřít"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <div className="space-y-1 relative z-10">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest font-mono text-emerald-200 bg-emerald-700 px-3 py-1 rounded-full border border-emerald-500/50">
-                Botanické určení dokončeno! (+50 XP)
+              <span className="text-[11px] font-extrabold uppercase tracking-widest font-mono text-emerald-250 bg-emerald-800 px-3 py-1 rounded-full border border-emerald-500/50">
+                Botanické určení dokončeno!
               </span>
-              <h2 className="text-3.5xl font-black tracking-tight mt-2 flex items-center">
-                <CheckCircle2 className="w-8 h-8 mr-2 shrink-0 fill-white text-emerald-600" />
+              <h2 className="text-3.5xl font-black tracking-tight mt-3 flex items-center">
+                <CheckCircle2 className="w-8 h-8 mr-2.5 shrink-0 fill-white text-emerald-750" />
                 {finishedSpecies.name}
               </h2>
               <p className="text-lg text-emerald-100 font-mono italic">
@@ -592,7 +756,7 @@ export const KeyMode: React.FC<KeyModeProps> = ({
 
             <button
               onClick={handleReset}
-              className="px-5 py-2.5 rounded-xl bg-white text-emerald-800 font-bold hover:bg-emerald-50 transition-all shadow-sm flex items-center space-x-2 relative z-10 shrink-0 text-sm"
+              className="hidden md:flex px-5 py-2.5 rounded-xl bg-white text-emerald-800 font-bold hover:bg-emerald-50 transition-all shadow-sm items-center space-x-2 relative z-10 shrink-0 text-sm cursor-pointer"
             >
               <RefreshCcw className="w-4 h-4" />
               <span>Určit další vzorek</span>
@@ -600,23 +764,68 @@ export const KeyMode: React.FC<KeyModeProps> = ({
           </div>
 
           {/* Dynamic Rendered Visualizations Cards */}
-          <div className="bg-stone-50 p-8 text-stone-900 grid grid-cols-1 md:grid-cols-3 gap-6 border-b border-stone-200">
-            <div>
-              <WoodCutVisualizer species={finishedSpecies} cutType="P" className="w-full aspect-square shadow-sm" />
-              <p className="text-xs text-stone-500 mt-2 font-mono leading-relaxed">{finishedSpecies.pDesc}</p>
+          <div className="bg-stone-50 p-5 sm:p-8 text-stone-900 border-b border-stone-200">
+            {/* Mobile Tab Switcher */}
+            <div className="md:hidden flex bg-stone-200/55 p-1 rounded-xl border border-stone-200/40 mb-4">
+              <button
+                onClick={() => { onPlayClickSound(); setFinishedActiveCutTab('P'); }}
+                className={`flex-1 py-1.5 text-center text-xs font-extrabold rounded-lg transition-all flex items-center justify-center space-x-1 ${
+                  finishedActiveCutTab === 'P' ? 'bg-white text-emerald-800 shadow-3xs' : 'text-stone-500'
+                }`}
+              >
+                <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white font-mono font-black text-[8px] flex items-center justify-center shrink-0">P</span>
+                <span>Příčný</span>
+              </button>
+              <button
+                onClick={() => { onPlayClickSound(); setFinishedActiveCutTab('R'); }}
+                className={`flex-1 py-1.5 text-center text-xs font-extrabold rounded-lg transition-all flex items-center justify-center space-x-1 ${
+                  finishedActiveCutTab === 'R' ? 'bg-white text-blue-900 shadow-3xs' : 'text-stone-500'
+                }`}
+              >
+                <span className="w-3.5 h-3.5 rounded-full bg-blue-600 text-white font-mono font-black text-[8px] flex items-center justify-center shrink-0">R</span>
+                <span>Radiální</span>
+              </button>
+              <button
+                onClick={() => { onPlayClickSound(); setFinishedActiveCutTab('T'); }}
+                className={`flex-1 py-1.5 text-center text-xs font-extrabold rounded-lg transition-all flex items-center justify-center space-x-1 ${
+                  finishedActiveCutTab === 'T' ? 'bg-white text-amber-900 shadow-3xs' : 'text-stone-500'
+                }`}
+              >
+                <span className="w-3.5 h-3.5 rounded-full bg-amber-600 text-white font-mono font-black text-[8px] flex items-center justify-center shrink-0">T</span>
+                <span>Tečný</span>
+              </button>
             </div>
-            <div>
-              <WoodCutVisualizer species={finishedSpecies} cutType="R" className="w-full aspect-square shadow-sm" />
-              <p className="text-xs text-stone-500 mt-2 font-mono leading-relaxed">{finishedSpecies.rDesc}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className={finishedActiveCutTab === 'P' ? 'block hover:scale-[1.01] transition-transform' : 'hidden md:block hover:scale-[1.01] transition-transform'}>
+                <WoodCutVisualizer key={`finished-${finishedSpecies.id}-P`} species={finishedSpecies} cutType="P" className="w-full aspect-square shadow-sm" />
+                <p className="text-xs text-stone-500 mt-2.5 font-mono leading-relaxed">{finishedSpecies.pDesc}</p>
+              </div>
+              <div className={finishedActiveCutTab === 'R' ? 'block hover:scale-[1.01] transition-transform' : 'hidden md:block hover:scale-[1.01] transition-transform'}>
+                <WoodCutVisualizer key={`finished-${finishedSpecies.id}-R`} species={finishedSpecies} cutType="R" className="w-full aspect-square shadow-sm" />
+                <p className="text-xs text-stone-500 mt-2.5 font-mono leading-relaxed">{finishedSpecies.rDesc}</p>
+              </div>
+              <div className={finishedActiveCutTab === 'T' ? 'block hover:scale-[1.01] transition-transform' : 'hidden md:block hover:scale-[1.01] transition-transform'}>
+                <WoodCutVisualizer key={`finished-${finishedSpecies.id}-T`} species={finishedSpecies} cutType="T" className="w-full aspect-square shadow-sm" />
+                <p className="text-xs text-stone-500 mt-2.5 font-mono leading-relaxed">{finishedSpecies.tDesc}</p>
+              </div>
             </div>
-            <div>
-              <WoodCutVisualizer species={finishedSpecies} cutType="T" className="w-full aspect-square shadow-sm" />
-              <p className="text-xs text-stone-500 mt-2 font-mono leading-relaxed">{finishedSpecies.tDesc}</p>
+
+            {/* Mobile-only button to determine another specimen below the drawings */}
+            <div className="md:hidden mt-5">
+              <button
+                onClick={handleReset}
+                className="w-full py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-md flex items-center justify-center space-x-2 text-sm cursor-pointer border border-emerald-500/20"
+              >
+                <RefreshCcw className="w-4 h-4 animate-spin-slow" />
+                <span>Určit další vzorek</span>
+              </button>
             </div>
           </div>
 
-          {/* Properties breakdown */}
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 bg-emerald-800 text-emerald-50 rounded-b-3xl">
+          {/* Properties breakdown (Stunning 3-column Layout where References are on the Right) */}
+          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8 bg-emerald-800 text-emerald-50 rounded-b-3xl">
+            {/* Column 1: Makroskopické vlastnosti */}
             <div className="space-y-4">
               <h3 className="text-sm font-mono font-bold tracking-wider uppercase text-emerald-300">Makroskopické vlastnosti</h3>
               <ul className="space-y-2.5 text-sm">
@@ -629,6 +838,7 @@ export const KeyMode: React.FC<KeyModeProps> = ({
               </ul>
             </div>
 
+            {/* Column 2: Konstrukční vlastnosti */}
             <div className="space-y-4">
               <h3 className="text-sm font-mono font-bold tracking-wider uppercase text-emerald-300">Konstrukční vlastnosti</h3>
               <table className="w-full text-sm">
@@ -657,222 +867,19 @@ export const KeyMode: React.FC<KeyModeProps> = ({
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Botanical references at the bottom of key success panel */}
-          <div className="mt-6">
-            <BotanicalReferences species={finishedSpecies} />
+            {/* Column 3: Botanical references on the far right (Aligned to Right) */}
+            <div className="space-y-4 md:border-l md:border-emerald-700/50 md:pl-6">
+              <h3 className="text-sm font-mono font-bold tracking-wider uppercase text-emerald-300">Botanické &amp; Anatomické zdroje</h3>
+              <BotanicalReferences 
+                species={finishedSpecies} 
+                className="bg-emerald-900/40 border-emerald-700/60 shadow-none text-emerald-100" 
+              />
+            </div>
           </div>
 
         </div>
       )}
-    </>
-  )}
-
-      {/* Basic Cuts explanation Modal */}
-      {showHelperModal && (() => {
-        const getHelperCutDetails = () => {
-          switch (helperCutType) {
-            case 'P':
-              return {
-                badgeBg: 'bg-emerald-600',
-                textColor: 'text-emerald-900',
-                title: 'Příčný (transverzální) řez (P)',
-                summary: 'Vedený vodorovně / kolmo na osu kmene. Odhaluje kruhové letokruhy, cévy v jarním dřevě a pryskyřičné kanálky.',
-                bullets: [
-                  'Je to anatomicky nejvýznamnější rovina pro určování dřeva.',
-                  'Letokruhy se jeví jako soustředné kružnice se zřetelným jarním (světlejším, řidším) a letním (tmavším, hustším) dřevem.',
-                  'U jehličnatých dřevin sledujeme přítomnost pryskyřičných kanálků (drobných světlých či tmavých teček).',
-                  'U listnatých dřevin s lupou zkoumáme uspořádání pórů (cév) - zda jsou v kruhu (kruhovitě pórovité) či rovnoměrně rozptýlené (roztroušeně pórovité).'
-                ]
-              };
-            case 'R':
-              return {
-                badgeBg: 'bg-blue-600',
-                textColor: 'text-blue-900',
-                title: 'Středový (radiální) řez (R)',
-                summary: 'Vedený svisle středem kmene přes dřeň. Odhaluje rovnoběžné pásy letokruhů a zrcátka dřeňových paprsků.',
-                bullets: [
-                  'Rovina řezu prochází podélně středovou osou kmenu a dření.',
-                  'Letokruhy zde tvoří svislé rovnoběžné pruhy střídajícího se jarního a letního dřeva.',
-                  'Dřeňové paprsky probíhají přesně kolmo na letokruhy; na tomto řezu se jeví jako příčné lesklé plošky zvané zrcátka.',
-                  'Zrcátka jsou vynikajícím rozlišovacím znakem pro dub (vysoká, široká) a buk (středně velká, hustá).'
-                ]
-              };
-            case 'T':
-              return {
-                badgeBg: 'bg-amber-600',
-                textColor: 'text-amber-900',
-                title: 'Tečný (tangenciální) řez (T)',
-                summary: 'Vedený svisle mimo osu kmene. Vzniká dekorativní parabolická (fládrová) kresba letokruhů ve tvaru V parabol.',
-                bullets: [
-                  'Rovina řezu je svislá, ale vede mimo střed, tečně k letokruhům.',
-                  'Letokruhy vytvářejí charakteristickou parabolickou kresbu tvaru křivek (tzv. fládr).',
-                  'Dřeňové paprsky jsou zde protnuty kolmo; strukturně se jeví jako svislá drobná vřetena.',
-                  'Rozmístění a velikost těchto vřeten spolehlivě rozlišuje jemnocévné listnáče jako buk a olši.'
-                ]
-              };
-          }
-        };
-
-        const details = getHelperCutDetails();
-
-        return (
-          <div 
-            onClick={() => setShowHelperModal(false)}
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in cursor-pointer"
-          >
-            <div 
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full overflow-hidden border border-stone-200 relative my-auto cursor-default"
-            >
-              
-              {/* Modal Header */}
-              <div className="p-4 md:p-5 border-b border-stone-200 bg-stone-50 flex justify-between items-center">
-                <div>
-                  <h3 className="text-base md:text-lg font-extrabold text-stone-900">Vysvětlivka makroskopických řezů</h3>
-                  <p className="text-[11px] text-stone-500 font-medium">Naučte se rozlišovat tři základní roviny řezu kmenem stromu</p>
-                </div>
-                <button
-                  onClick={() => setShowHelperModal(false)}
-                  className="text-stone-400 hover:text-stone-600 hover:bg-stone-200 text-xs font-bold font-mono bg-stone-100 px-3 py-1.5 rounded-full transition-all"
-                  aria-label="Zavřít"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-4 md:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-                
-                {/* Clean Tab Page Selector */}
-                <div className="flex bg-stone-100 p-1 rounded-xl border border-stone-200 shadow-3xs max-w-md mx-auto">
-                  <button
-                    type="button"
-                    onClick={() => { onPlayClickSound(); setHelperCutType('P'); }}
-                    className={`flex-1 text-center py-2 rounded-lg cursor-pointer text-xs font-bold transition-all ${
-                      helperCutType === 'P'
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-stone-600 hover:bg-stone-200/60'
-                    }`}
-                  >
-                    Příčný rez (P)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { onPlayClickSound(); setHelperCutType('R'); }}
-                    className={`flex-1 text-center py-2 rounded-lg cursor-pointer text-xs font-bold transition-all ${
-                      helperCutType === 'R'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-stone-600 hover:bg-stone-200/60'
-                    }`}
-                  >
-                    Středový rez (R)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { onPlayClickSound(); setHelperCutType('T'); }}
-                    className={`flex-1 text-center py-2 rounded-lg cursor-pointer text-xs font-bold transition-all ${
-                      helperCutType === 'T'
-                        ? 'bg-amber-600 text-white shadow-sm'
-                        : 'text-stone-600 hover:bg-stone-200/60'
-                    }`}
-                  >
-                    Tečný rez (T)
-                  </button>
-                </div>
-
-                {/* 2-Column Responsive Information Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-                  
-                  {/* Left Column: Descriptions and educational texts (Order-2 on mobile, Order-1 on desktop) */}
-                  <div className="order-2 md:order-1 space-y-3">
-                    <div className="space-y-1">
-                      <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border border-stone-200/80 font-mono tracking-wider text-stone-500 bg-stone-50`}>
-                        {helperCutType === 'P' ? 'TRANSVERZÁLNÍ' : helperCutType === 'R' ? 'RADIÁLNÍ' : 'TANGENCIÁLNÍ'} ROVINA
-                      </span>
-                      <h4 className="font-extrabold text-stone-900 text-base sm:text-lg leading-tight">
-                        {details?.title}
-                      </h4>
-                      <p className="text-xs text-stone-600 leading-relaxed font-semibold italic">
-                        {details?.summary}
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 bg-stone-50 rounded-xl border border-stone-200/60 space-y-2">
-                      <h5 className="font-mono text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                        Co zkoumáme a pozorujeme:
-                      </h5>
-                      <ul className="space-y-1.5">
-                        {details?.bullets.map((bullet, idx) => (
-                          <li key={idx} className="flex items-start space-x-2 text-[11px] text-stone-600 leading-relaxed">
-                            <span className="text-emerald-500 font-extrabold shrink-0 mt-0.5">✓</span>
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Schema and macro texture side-by-side (Order-1 on mobile, Order-2 on desktop) */}
-                  <div className="order-1 md:order-2 space-y-2">
-                    <div className="grid grid-cols-2 gap-4 items-stretch">
-                      
-                      {/* Left Block: 3D Log Schema */}
-                      <div className="bg-stone-50 border border-stone-150 rounded-2xl p-4 flex flex-col items-center justify-between text-center min-h-[380px] md:min-h-[440px]">
-                        <div className="w-full flex-1 flex items-center justify-center">
-                          <LogCutSvg cutType={helperCutType} className="max-h-[280px] w-full transition-transform duration-300 hover:scale-[1.03]" />
-                        </div>
-                        <span className="mt-2.5 font-mono text-[10px] text-stone-500 font-extrabold uppercase tracking-wide">
-                          3D Schéma ({helperCutType})
-                        </span>
-                      </div>
-
-                      {/* Right Block: Real Macro texture */}
-                      <div className="bg-stone-50 border border-stone-150 rounded-2xl p-4 flex flex-col items-center justify-between min-h-[380px] md:min-h-[440px]">
-                        <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-xl bg-stone-100 shadow-inner">
-                          <WoodCutVisualizer
-                            species={jedleSpecies}
-                            cutType={helperCutType}
-                            simplified={true}
-                            zoom={true}
-                            className="h-[280px] w-full rounded-xl object-cover transition-transform duration-300 hover:scale-[1.03]"
-                          />
-                        </div>
-                        <span className="mt-2.5 font-mono text-[10px] text-stone-500 font-extrabold uppercase tracking-wide text-center truncate max-w-full">
-                          Makro (Jedle b.)
-                        </span>
-                      </div>
-
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Warning student tip banner */}
-                <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/30 text-amber-950 flex items-start space-x-2.5 text-[11px] shadow-3xs">
-                  <AlertCircle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
-                  <span className="leading-snug">
-                    <strong>Tip:</strong> Při makroskopickém zkoumání s lupou (10x zvětšení) je nejdůležitější najít čistý líc příčného řezu (P) seříznutý žiletkou. Radiální řez (R) odhalí reflexní zrcátka a tangenciální řez (T) odhalí síťovanou strukturu vřeten dřeňových paprsků.
-                  </span>
-                </div>
-
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-3 md:p-4 bg-stone-50 border-t border-stone-200 flex justify-end">
-                <button
-                  onClick={() => setShowHelperModal(false)}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg cursor-pointer shadow-sm transition-colors"
-                >
-                  Rozumím, zpět do výuky
-                </button>
-              </div>
-
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 };

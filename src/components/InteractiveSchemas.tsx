@@ -491,7 +491,7 @@ export const InteractiveSchemas: React.FC<InteractiveSchemasProps> = ({ onSelect
       </div>
 
       {/* Selector Tabs */}
-      <div className="flex overflow-x-auto pb-1 gap-1 border-b border-stone-100 font-mono text-xs">
+      <div className="flex md:justify-center overflow-x-auto pb-1 gap-1 border-b border-stone-100 font-mono text-xs">
         <button
           onClick={() => setActiveSchemaTab('conifers')}
           className={`px-4 py-2.5 rounded-t-xl font-bold transition-all shrink-0 border-b-2 cursor-pointer ${
@@ -539,7 +539,7 @@ export const InteractiveSchemas: React.FC<InteractiveSchemasProps> = ({ onSelect
         
         {/* TAB 1: CONIFERS (JEHLIČNANY) */}
         {activeSchemaTab === 'conifers' && (
-          <div className="min-w-[780px] pb-6 relative text-stone-800 font-sans">
+          <div className="min-w-[780px] w-[780px] md:mx-auto pb-6 relative text-stone-800 font-sans">
             {/* SVG connectors layer underneath the boxes */}
             <svg 
               className="absolute inset-0 pointer-events-none" 
@@ -719,7 +719,7 @@ export const InteractiveSchemas: React.FC<InteractiveSchemasProps> = ({ onSelect
 
         {/* TAB 2: RING POROUS HARDWOODS (KRUHOVITĚ PÓROVITÉ LISTNÁČE) */}
         {activeSchemaTab === 'ringPorous' && (
-          <div className="min-w-[880px] pb-6 relative text-stone-800 font-sans">
+          <div className="min-w-[880px] w-[880px] md:mx-auto pb-6 relative text-stone-800 font-sans">
             <svg 
               className="absolute inset-0 pointer-events-none" 
               width="100%" 
@@ -862,7 +862,7 @@ export const InteractiveSchemas: React.FC<InteractiveSchemasProps> = ({ onSelect
 
         {/* TAB 3: DIFFUSE POROUS HARDWOODS (ROZTROUŠENĚ PÓROVITÉ LISTNÁČE) */}
         {activeSchemaTab === 'diffusePorous' && (
-          <div className="min-w-[1020px] pb-6 relative text-stone-800 font-sans">
+          <div className="min-w-[1020px] w-[1020px] md:mx-auto pb-6 relative text-stone-800 font-sans">
             <svg 
               className="absolute inset-0 pointer-events-none" 
               width="100%" 

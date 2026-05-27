@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Award, CheckCircle, Lock, Download, Sparkles, AlertCircle, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Award, CheckCircle, Lock, Download, Sparkles, AlertCircle, HelpCircle, X } from 'lucide-react';
 import { UserStats } from '../types';
 import { ALL_SPECIES } from '../data/woodData';
 
@@ -11,6 +11,20 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
   const [name, setName] = useState<string>('');
   const [showBypass, setShowBypass] = useState<boolean>(false);
   const [isBypassed, setIsBypassed] = useState<boolean>(false);
+  const [showNameModal, setShowNameModal] = useState<boolean>(false);
+  
+  // Listen for Escape to close name request modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showNameModal) {
+        setShowNameModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showNameModal]);
   
   // Completed species count
   const speciesCount = stats.completedSpeciesIds ? stats.completedSpeciesIds.length : 0;
@@ -18,10 +32,14 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
 
   // Completed detective cases count
   const detectiveCount = stats.completedDetectiveCases ? stats.completedDetectiveCases.length : 0;
-  const isDetectiveFinished = detectiveCount >= 5;
+  const isDetectiveFinished = detectiveCount >= 12;
+
+  // Completed quizzes count (Makro Test 1 & 2)
+  const completedQuizzes = stats.completedQuizzes || [];
+  const isQuizzesFinished = completedQuizzes.includes('mendelu_makro') && completedQuizzes.includes('mendelu_mikro');
 
   // Final validation
-  const isEligible = (isSpeciesFinished && isDetectiveFinished) || isBypassed;
+  const isEligible = (isSpeciesFinished && isDetectiveFinished && isQuizzesFinished) || isBypassed;
 
   // Formatting current date in Czech format: DD. MM. YYYY
   const getFormattedDate = () => {
@@ -56,11 +74,15 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
   <path d="M 770,510 L 745,535 M 770,500 L 735,535 M 770,490 L 725,535" stroke="#065f46" stroke-width="1.5" opacity="0.7" />
 
   <!-- University Emblem placeholder -->
-  <g transform="translate(400, 75)" text-anchor="middle">
+  <g text-anchor="middle">
+    <text x="400" y="55" font-size="11" font-weight="bold" fill="#065f46" letter-spacing="3" font-family="system-ui, sans-serif">INTERAKTIVNÍ KLÍČ A ATLAS DŘEVIN</text>
+    <text x="400" y="70" font-size="9" font-weight="600" fill="#65a30d" letter-spacing="1">VÝUKOVÁ MODULÁRNÍ APLIKACE</text>
+  </g>
+
+  <!-- Tree Icon Emblem positioned lower as requested without overlapping texts -->
+  <g transform="translate(400, 110)" text-anchor="middle">
     <ellipse cx="0" cy="0" rx="20" ry="12" fill="#065f46" opacity="0.9" />
-    <path d="M-10,0 L10,0 M0,-6 L0,6" stroke="#ffffff" stroke-width="2" />
-    <text y="-25" font-size="11" font-weight="bold" fill="#065f46" letter-spacing="3" font-family="system-ui, sans-serif">INTERAKTIVNÍ KLÍČ A ATLAS DŘEVIN</text>
-    <text y="-12" font-size="9" font-weight="600" fill="#65a30d" letter-spacing="1">VÝUKOVÁ MODULÁRNÍ APLIKACE</text>
+    <path d="M0,-7 L4,-1 L1.5,-1 L5,5 L-5,5 L-1.5,-1 L-4,-1 Z" fill="#ffffff" />
   </g>
 
   <!-- Title -->
@@ -84,7 +106,7 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
     <text font-weight="bold" font-size="13" fill="#1f2937" y="0">Úspěl(a) ve všech zkouškách a identifikacích dřevin</text>
     <text y="20">Bezchybně popsal(a) a v botanickém klíči utřídil(a) všech 33 hlavních jehličnatých a listnatých dřevin,</text>
     <text y="38">makroskopicky identifikoval stavbu dřeva, dřeňové paprsky, cévy a pryskyřičné kanálky v této aplikaci</text>
-    <text y="56">a úspěšně vyřešil(a) všech 5 vyšetřovacích případů v lesní detektivce.</text>
+    <text y="56">a úspěšně vyřešil(a) všech 12 vyšetřovacích případů a zkouškové testy.</text>
   </g>
 
   <!-- Date dynamic -->
@@ -94,12 +116,11 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
   </g>
 
   <!-- Stamp and Authority -->
-  <g transform="translate(720, 452)" text-anchor="end">
+  <g transform="translate(720, 460)" text-anchor="end">
     <text font-size="10" fill="#9ca3af" font-family="system-ui, sans-serif">AUTOR A VÝVOJ APLIKACE</text>
-    <text y="18" font-size="13" font-weight="bold" fill="#065f46" font-family="system-ui, sans-serif">Luděk Sušický</text>
-    <text y="38" font-size="16" font-weight="bold" font-style="italic" fill="#2563eb" font-family="'Brush Script MT', 'Great Vibes', 'Georgia', cursive, Georgia, serif" opacity="0.95">Luděk Sušický</text>
-    <line x1="-125" y1="44" x2="0" y2="44" stroke="#d1d5db" stroke-width="1" />
-    <text y="54" font-size="8.5" fill="#9ca3af" font-family="system-ui, sans-serif">DIGITÁLNÍ PODPIS AUTORA</text>
+    <text y="20" font-size="17" font-weight="bold" font-style="italic" fill="#2563eb" font-family="'Brush Script MT', 'Great Vibes', 'Georgia', cursive, Georgia, serif" opacity="0.95">Luděk Sušický</text>
+    <line x1="-135" y1="28" x2="0" y2="28" stroke="#d1d5db" stroke-width="1" />
+    <text y="40" font-size="8.5" fill="#9ca3af" font-family="system-ui, sans-serif">DIGITÁLNÍ PODPIS AUTORA</text>
   </g>
 
   <!-- Seal icon sticker at the center base -->
@@ -174,48 +195,48 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
             </span>
           </div>
 
-          {/* Progress 2: 5 cases */}
+          {/* Progress 2: 12 cases */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <CheckCircle className={`w-4 h-4 ${isDetectiveFinished ? 'text-emerald-600 fill-emerald-100' : 'text-stone-300'}`} />
               <span className={isDetectiveFinished ? 'text-stone-900 font-semibold' : 'text-stone-500'}>
-                Vyřešit všech 5 detektivních případů v lese
+                Vyřešit všech 12 detektivních případů v lese
               </span>
             </div>
             <span className="font-mono font-bold text-stone-700">
-              {detectiveCount} / 5
+              {detectiveCount} / 12
+            </span>
+          </div>
+
+          {/* Progress 3: Both Makro tests */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className={`w-4 h-4 ${isQuizzesFinished ? 'text-emerald-600 fill-emerald-100' : 'text-stone-300'}`} />
+              <span className={isQuizzesFinished ? 'text-stone-900 font-semibold' : 'text-stone-500'}>
+                Úspěšně zvládnout oba praktické Makro testy
+              </span>
+            </div>
+            <span className="font-mono font-bold text-stone-700">
+              {completedQuizzes.length} / 2
             </span>
           </div>
         </div>
 
         {/* Helpful text */}
         <p className="text-[11px] text-stone-500 italic border-t border-stone-200/50 pt-2 leading-relaxed">
-          Klíč podle Mendelovy univerzity vyžaduje stoprocentní přesvědčivost v určení makroskopických detailů lesních stromů.
+          Tento certifikát vyžaduje stoprocentní diagnostickou přesvědčivost v určení makroskopických detailů lesních stromů.
         </p>
       </div>
 
       {/* Active control block */}
       {isEligible ? (
         <div className="space-y-4 pt-2">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-stone-700">
-              Vaše celé jméno a příjmení pro certifikát:
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Např. Jan Novák"
-              className="w-full px-3 py-2 bg-stone-50 border border-stone-200 outline-none rounded-xl text-xs text-stone-800 placeholder-stone-400 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all font-medium"
-            />
-          </div>
-
           <button
-            onClick={handleDownloadSVG}
+            onClick={() => setShowNameModal(true)}
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center space-x-2 shadow-xs"
           >
             <Download className="w-4 h-4" />
-            <span>Vygenerovat a stáhnout vektorový SVG diplom</span>
+            <span>Sestavit a stáhnout certifikát absolventa</span>
           </button>
         </div>
       ) : (
@@ -259,6 +280,70 @@ export const CertificateSection: React.FC<CertificateSectionProps> = ({ stats })
           </div>
         )}
       </div>
+
+      {/* Name Request Prompt Modal */}
+      {showNameModal && (
+        <div 
+          onClick={() => setShowNameModal(false)}
+          className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-stone-200 relative my-auto cursor-default space-y-4"
+          >
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-100">
+                <Award className="w-6 h-6 fill-emerald-50 text-emerald-600" />
+              </div>
+              <h3 className="text-base font-black text-stone-950">Zadejte jméno žáka</h3>
+              <p className="text-xs text-stone-550 leading-relaxed">
+                Zadejte prosím celé jméno a příjmení studenta, které se vytiskne na oficiální reprezentativní certifikát.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <input
+                type="text"
+                value={name}
+                autoFocus
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Např. Jan Novák"
+                className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 outline-none rounded-xl text-sm text-stone-850 placeholder-stone-400 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition-all font-semibold"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (name.trim()) {
+                      handleDownloadSVG();
+                      setShowNameModal(false);
+                    }
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex space-x-2 pt-1">
+              <button
+                onClick={() => setShowNameModal(false)}
+                className="flex-1 py-2.5 bg-stone-100 hover:bg-stone-200 active:scale-98 text-stone-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Zrušit
+              </button>
+              <button
+                onClick={() => {
+                  if (name.trim()) {
+                    handleDownloadSVG();
+                    setShowNameModal(false);
+                  }
+                }}
+                disabled={!name.trim()}
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center space-x-1 shadow-3xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Uložit &amp; Stáhnout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

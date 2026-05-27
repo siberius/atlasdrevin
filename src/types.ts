@@ -85,4 +85,30 @@ export interface UserStats {
   totalAnswers: number;
   unlockedAchievements: string[];
   completedDetectiveCases?: string[];
+  completedQuizzes?: string[];
 }
+
+/**
+ * Resolves an external image URL to either pass through our backend proxy (if running on our server)
+ * or to go directly to the source URL (if running as a standalone dreviny.html file locally or on standard static hosting).
+ */
+export function getProxiedImageUrl(originalUrl: string): string {
+  if (!originalUrl) return '';
+  if (typeof window !== 'undefined') {
+    const isLocalFile = window.location.protocol === 'file:' || 
+                        window.location.protocol.startsWith('content') ||
+                        window.location.protocol === 'about:';
+    const isStandalone = isLocalFile || 
+      (!window.location.hostname.includes('run.app') && 
+       window.location.hostname !== 'localhost' && 
+       window.location.hostname !== '127.0.0.1');
+    if (isStandalone) {
+      // When running as a standalone local file or on custom static hosting,
+      // the browser sends no referrer (or setting referrerPolicy="no-referrer" removes it),
+      // which allows bypassing Mendel's domain-specific hotlink blocks natively.
+      return originalUrl;
+    }
+  }
+  return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+}
+

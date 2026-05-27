@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreeSpecies } from '../types';
+import { TreeSpecies, getProxiedImageUrl } from '../types';
 import { WSL_IMAGE_MAPPING } from '../data/wslImageMapping';
 import { MACRO_IMAGE_P, MACRO_IMAGE_R, MACRO_IMAGE_T } from '../data/macroImageMapping';
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, ExternalLink, Image as ImageIcon, Info, HelpCircle } from 'lucide-react';
@@ -30,7 +30,7 @@ export const getWikipediaUrl = (speciesId: string): string => {
     morusovnik: "https://cs.wikipedia.org/wiki/Moru%C5%A1e",
     jasan: "https://cs.wikipedia.org/wiki/Jasan_ztepil%C3%BD",
     kastanovnik: "https://cs.wikipedia.org/wiki/Ka%C5%A1tanovn%C3%ADk_jedl%C3%BD",
-    oresak: "https://cs.wikipedia.org/wiki/O%C5%9ee%C5%A1%C3%A1k_kr%C3%A1lovsk%C3%BD",
+    oresak: "https://cs.wikipedia.org/wiki/O%C5%99e%C5%A1%C3%A1k_kr%C3%A1lovsk%C3%BD",
     tresen: "https://cs.wikipedia.org/wiki/T%C5%99e%C5%A1e%C5%88_pta%C4%8D%C3%AD",
     svestka: "https://cs.wikipedia.org/wiki/%C5%A0vestka_dom%C3%A1c%C3%AD",
     platan: "https://cs.wikipedia.org/wiki/Platan",
@@ -38,15 +38,15 @@ export const getWikipediaUrl = (speciesId: string): string => {
     habr: "https://cs.wikipedia.org/wiki/Habr_obecn%C3%BD",
     olse: "https://cs.wikipedia.org/wiki/Ol%C5%A1e_lepkav%C3%A1",
     javor: "https://cs.wikipedia.org/wiki/Javor_klen",
-    babyka: "https://cs.wikipedia.org/wiki/Babyka_obecn%C3%A1",
+    babyka: "https://cs.wikipedia.org/wiki/Javor_babyka",
     briza: "https://cs.wikipedia.org/wiki/B%C5%99%C3%ADza_b%C4%9Blokor%C3%A1",
     lipa: "https://cs.wikipedia.org/wiki/L%C3%ADpa_srd%C4%8Dit%C3%A1",
-    osika: "https://cs.wikipedia.org/wiki/Osika_obecn%C3%A1",
+    osika: "https://cs.wikipedia.org/wiki/Topol_osika",
     hrusen: "https://cs.wikipedia.org/wiki/Hru%C5%A1e%C5%88_obecn%C3%A1",
     jirovec: "https://cs.wikipedia.org/wiki/J%C3%ADrovec_ma%C4%8Fal",
-    vrba: "https://cs.wikipedia.org/wiki/Vrba",
+    vrba: "https://cs.wikipedia.org/wiki/Vrba_(rod)",
     topol: "https://cs.wikipedia.org/wiki/Topol",
-    jerab: "https://cs.wikipedia.org/wiki/Je%C5%99%C3%A1b",
+    jerab: "https://cs.wikipedia.org/wiki/Je%C5%99%C3%A1b_pta%C4%8D%C3%AD",
     jablon: "https://cs.wikipedia.org/wiki/Jablo%C5%88_lesn%C3%AD",
   };
   return wikiMapping[speciesId] || '';
@@ -223,7 +223,7 @@ export const BotanicalReferences: React.FC<{ species: any; className?: string }>
           <span>Botanické & Anatomické reference:</span>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-0.5 font-mono">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 pt-0.5 font-mono">
           {wslUrl ? (
             <a
               href={wslUrl}
@@ -294,13 +294,13 @@ export const BotanicalReferences: React.FC<{ species: any; className?: string }>
             </span>
             <div className="flex items-center space-x-2 bg-amber-50/20 hover:bg-amber-50/45 p-2 rounded-lg border border-amber-500/10 transition-colors">
               <img 
-                src={`/api/image-proxy?url=${encodeURIComponent(dbImages.tree[0])}`} 
+                src={getProxiedImageUrl(dbImages.tree[0])} 
                 alt="Tree botanical preview" 
                 className="w-12 h-12 rounded-md object-cover border border-stone-200 shadow-3xs cursor-zoom-in hover:scale-105 transition-all duration-200"
                 referrerPolicy="no-referrer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const proxiedUrl = `/api/image-proxy?url=${encodeURIComponent(dbImages.tree![0])}`;
+                  const proxiedUrl = getProxiedImageUrl(dbImages.tree![0]);
                   window.open(proxiedUrl, '_blank');
                 }}
                 title="Kliknutím otevřete v plné velikosti"
@@ -312,16 +312,16 @@ export const BotanicalReferences: React.FC<{ species: any; className?: string }>
           </div>
         )}
 
-        <div className="pt-2 border-t border-stone-200/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-          <div className="flex items-center space-x-1.5 text-stone-500 font-sans text-[10px]">
+        <div className="pt-2 border-t border-stone-200/50 flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-stretch sm:justify-between lg:space-y-1.5 gap-1.5">
+          <div className="flex items-center space-x-1.5 text-stone-500 font-sans text-[10px] lg:leading-normal">
             <HelpCircle className="w-3.5 h-3.5 text-stone-400 shrink-0" />
             <span>Chcete anatomicky identifikovat jiný vzorek dřeva?</span>
           </div>
           <a
-            href="https://www.wood-database.com/wood-filter/"
+            href={species ? `https://www.wood-database.com/wood-filter/?fwp_search=${encodeURIComponent(getCleanLatinName(species.latinName))}` : "https://www.wood-database.com/wood-filter/"}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-1 p-1 px-2 rounded bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 lg:text-amber-800 transition-all font-mono text-[9.5px]"
+            className="inline-flex items-center justify-center space-x-1 p-1 py-1.5 px-2 rounded bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 lg:text-amber-800 transition-all font-mono text-[9.5px] w-full text-center"
           >
             <span>🔍</span>
             <span className="font-black">Identifikační klíč Wood Filter</span>
@@ -345,8 +345,10 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
   simplified = false
 }) => {
   const [viewMode, setViewModeState] = useState<'macro' | 'micro' | 'botany'>(() => {
+    if (initialViewMode) {
+      return initialViewMode === 'schema' ? 'micro' : initialViewMode;
+    }
     if (simplified) return 'macro';
-    if (initialViewMode === 'micro' || initialViewMode === 'schema') return 'micro';
     return globalViewModePreference;
   });
 
@@ -453,7 +455,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
       else if (cutType === 'T') dbUrls = dbImages.T || [];
 
       dbUrls.forEach(url => {
-        const proxiedUrl = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+        const proxiedUrl = getProxiedImageUrl(url);
         combined.push({ url: proxiedUrl, source: 'wood-database' });
       });
     }
@@ -516,7 +518,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
       return wikiImage;
     }
     if (dbImages?.tree && dbImages.tree.length > 0) {
-      return `/api/image-proxy?url=${encodeURIComponent(dbImages.tree[0])}`;
+      return getProxiedImageUrl(dbImages.tree[0]);
     }
     return null;
   };
@@ -524,12 +526,14 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
   const nahledImage = getNahledImage();
 
   const mendelUrl = species ? getMendelMacroUrl(species.id, cutType) : null;
-  const mendelProxiedUrl = mendelUrl ? `/api/image-proxy?url=${encodeURIComponent(mendelUrl)}` : null;
+  const mendelProxiedUrl = mendelUrl ? getProxiedImageUrl(mendelUrl) : null;
 
   // Reset active image index and preserve global preference mode
   useEffect(() => {
     setActiveImgIdx(0);
-    if (simplified) {
+    if (initialViewMode) {
+      setViewModeState(initialViewMode === 'schema' ? 'micro' : initialViewMode);
+    } else if (simplified) {
       setViewModeState('macro');
     } else {
       setViewModeState(globalViewModePreference);
@@ -553,7 +557,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
 
   const wslCode = species ? getScientificCode(species.id) : '';
   const wslUrl = wslCode ? `https://www.wsl.ch/land/products/dendro/species.php?code=${wslCode}` : '';
-  const woodDbUrl = species ? `https://www.wood-database.com/?s=${encodeURIComponent(getCleanLatinName(species.latinName))}` : '';
+  const woodDbUrl = species ? `https://www.wood-database.com/wood-filter/?fwp_search=${encodeURIComponent(getCleanLatinName(species.latinName))}` : '';
   const wikiUrl = species ? getWikipediaUrl(species.id) : '';
 
   // Derive wood color schemes
@@ -1522,11 +1526,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
     <div className="flex flex-col w-full space-y-2">
       {/* TABS SELECTOR ABOVE THE IMAGE */}
       {!simplified && (
-        <div className="flex items-center justify-between bg-stone-100 p-1.5 rounded-lg border border-stone-200 shadow-3xs">
-          <span className="text-[10px] font-extrabold font-mono text-stone-500 uppercase tracking-wider pl-1.5 flex items-center space-x-1.5">
-            <span className={`w-2 h-2 rounded-full ${badgeColor}`} />
-            <span>Řez {shortcutOfCut}:</span>
-          </span>
+        <div className="flex items-center justify-center bg-stone-100 p-1 rounded-lg border border-stone-200 shadow-3xs" role="tablist" aria-label="Měřítko zobrazení dřeva">
           <div className="flex bg-stone-200/60 p-0.5 rounded-md border border-stone-250 text-[10px] font-mono font-bold text-stone-700 shadow-3xs">
             <button
               type="button"
@@ -1536,6 +1536,9 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
                   ? 'bg-amber-600 text-white font-black shadow-3xs'
                   : 'hover:bg-stone-300 text-stone-600'
               }`}
+              role="tab"
+              aria-selected={viewMode === 'macro'}
+              aria-label="Makroskopické zobrazení textury desky"
             >
               Makro 🪵
             </button>
@@ -1547,22 +1550,12 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
                   ? 'bg-blue-600 text-white font-black shadow-3xs'
                   : 'hover:bg-stone-300 text-stone-600'
               }`}
+              role="tab"
+              aria-selected={viewMode === 'micro'}
+              aria-label="Mikroskopické detaily buněčné stavby"
             >
               Detaily 🔬
             </button>
-            {nahledImage && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setViewMode('botany'); }}
-                className={`px-2.5 py-0.5 rounded cursor-pointer transition-all duration-150 ${
-                  viewMode === 'botany'
-                    ? 'bg-emerald-600 text-white font-black shadow-3xs'
-                    : 'hover:bg-stone-300 text-stone-600'
-                }`}
-              >
-                Botanika 🌿
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -1576,7 +1569,12 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
               src={mendelProxiedUrl}
               alt={`Makro textura desky - ${species?.name}`}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.03]"
+              onError={(e) => {
+                if (mendelUrl && e.currentTarget.src !== mendelUrl) {
+                  e.currentTarget.src = mendelUrl;
+                }
+              }}
+              className="w-full h-full object-cover cursor-zoom-in transition-all duration-300 hover:brightness-105"
               onClick={() => setIsZoomed(true)}
             />
           ) : (
@@ -1621,7 +1619,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
               src={nahledImage}
               alt={`Náhled na strom - ${species?.name}`}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.03]"
+              className="w-full h-full object-cover cursor-zoom-in transition-all duration-300 hover:brightness-105"
               onClick={() => setIsZoomed(true)}
             />
           ) : (
@@ -1660,8 +1658,9 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
             <img
               src={images[activeImgIdx]}
               alt={`${titleOfCut} - ${species?.name}`}
+              aria-label={`Mikroskopický řez: ${titleOfCut} druhu ${species?.name}. ${species?.class === 'jehlicnate' ? 'Jehličnaté dřevo složené převážně z tracheid.' : 'Listnaté dříví s cévami a póry.'}`}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.03]"
+              className="w-full h-full object-cover cursor-zoom-in transition-all duration-300 hover:brightness-105"
               onClick={() => setIsZoomed(true)}
             />
 
@@ -1749,7 +1748,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
                       <ExternalLink className="w-2.5 h-2.5" />
                     </a>
                     <a
-                      href={`https://www.wood-database.com/?s=${encodeURIComponent(getCleanLatinName(species?.latinName))}`}
+                      href={`https://www.wood-database.com/wood-filter/?fwp_search=${encodeURIComponent(getCleanLatinName(species?.latinName))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[10px] bg-stone-100 hover:bg-stone-200 border border-stone-300/60 rounded px-1.5 py-0.5 font-bold font-mono text-stone-700 flex items-center justify-center space-x-1 transition-colors"
@@ -1773,6 +1772,19 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
         </span>
         <span>{titleOfCut}</span>
       </div>
+
+      {/* Hidden preloader to cache all three cuts of the species to prevent flashing on hover */}
+      {species && (
+        <div className="hidden" aria-hidden="true" style={{ display: 'none', width: 0, height: 0, overflow: 'hidden' }}>
+          {['P', 'R', 'T'].map((c) => {
+            const url = getMendelMacroUrl(species.id, c as 'P' | 'R' | 'T');
+            const proxiedUrl = url ? getProxiedImageUrl(url) : null;
+            return proxiedUrl ? (
+              <img key={c} src={proxiedUrl} alt="" decoding="async" />
+            ) : null;
+          })}
+        </div>
+      )}
 
       {/* ZOOM LIGHTBOX MODAL */}
       {isZoomed && (
@@ -1811,6 +1823,11 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
                 src={mendelProxiedUrl}
                 alt={`Makro textura desky - ${species?.name} Zoomed`}
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (mendelUrl && e.currentTarget.src !== mendelUrl) {
+                    e.currentTarget.src = mendelUrl;
+                  }
+                }}
                 className="max-h-[72vh] max-w-full rounded-lg object-contain border border-stone-800 shadow-2xl"
               />
             ) : viewMode === 'botany' && nahledImage ? (
@@ -1882,7 +1899,7 @@ export const WoodCutVisualizer: React.FC<VisualizerProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`https://www.wood-database.com/?s=${encodeURIComponent(getCleanLatinName(species?.latinName))}`);
+                        window.open(`https://www.wood-database.com/wood-filter/?fwp_search=${encodeURIComponent(getCleanLatinName(species?.latinName))}`);
                       }}
                       className="bg-amber-700 hover:bg-amber-600 border border-amber-600 text-white font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-all text-xs cursor-pointer"
                     >

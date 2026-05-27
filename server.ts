@@ -1,10 +1,32 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { execSync } from "child_process";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Endpoint to download/view the single standalone HTML file
+  app.get("/dreviny.html", (req, res) => {
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        console.log("Development mode: Regenerating dreviny.html to ensure it is 100% up-to-date...");
+        execSync("npx vite build && node inline-assets.js", { stdio: "inherit" });
+      } catch (err: any) {
+        console.error("Failed to dynamically rebuild dreviny.html in development:", err);
+      }
+    }
+    
+    // Set headers to force direct download as file and completely bypass browser cache
+    res.setHeader("Content-Disposition", 'attachment; filename="dreviny.html"');
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    
+    res.sendFile(path.join(process.cwd(), "dreviny.html"));
+  });
 
   // API proxy endpoint for wood macro/micro images to prevent hotlink blocks
   app.get("/api/image-proxy", async (req, res) => {
