@@ -498,7 +498,7 @@ export default function App() {
                 </p>
                 <div className="flex flex-col space-y-2 pt-1">
                   <a
-                    href="/dreviny.html"
+                    href={`/dreviny.html?_cb=${Date.now()}`}
                     download="dreviny.html"
                     className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-center flex items-center justify-center space-x-2 shadow-xs cursor-pointer transition-colors text-xs"
                   >

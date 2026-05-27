@@ -236,7 +236,7 @@ export const AppHeader: React.FC<HeaderProps> = ({
 
                   {/* Stáhnout HTML */}
                   <a
-                    href="/dreviny.html"
+                    href={`/dreviny.html?_cb=${Date.now()}`}
                     download="dreviny.html"
                     onClick={() => setIsOpen(false)}
                     className="w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold transition-all hover:bg-stone-50 text-stone-700 hover:text-stone-900 text-left cursor-pointer"
